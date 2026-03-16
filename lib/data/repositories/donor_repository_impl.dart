@@ -34,21 +34,21 @@ class DonorRepositoryImpl implements DonorRepository {
     required String bloodGroup,
     required double userLatitude,
     required double userLongitude,
-    required double radiusKm = AppConstants.PROXIMITY_RADIUS_KM,
+    double radiusKm = AppConstants.PROXIMITY_RADIUS_KM,
   }) async {
     try {
       final donors = await remoteDataSource.getAllDonors();
-      
+
       // Filter by blood group and visibility
       final filteredDonors = donors
-          .where((donor) =>
-              donor.bloodGroup.group == bloodGroup &&
-              donor.isVisibleInSearch)
+          .where(
+            (donor) =>
+                donor.bloodGroup.group == bloodGroup && donor.isVisibleInSearch,
+          )
           .toList();
 
       // Apply proximity filter
-      final nearbyDonorsWithDistance =
-          GeolocationUtils.filterDonorsByProximity(
+      final nearbyDonorsWithDistance = GeolocationUtils.filterDonorsByProximity(
         donors: filteredDonors,
         userLat: userLatitude,
         userLon: userLongitude,
@@ -57,11 +57,13 @@ class DonorRepositoryImpl implements DonorRepository {
 
       // Convert to DonorSearchResult
       final results = nearbyDonorsWithDistance
-          .map((entry) => DonorSearchResultModel(
-                donor: entry.key as dynamic,
-                distanceKm: entry.value,
-                isWithinProximity: true,
-              ))
+          .map(
+            (entry) => DonorSearchResultModel(
+              donor: entry.key as dynamic,
+              distanceKm: entry.value,
+              isWithinProximity: true,
+            ),
+          )
           .toList();
 
       return Right(results);
@@ -74,7 +76,7 @@ class DonorRepositoryImpl implements DonorRepository {
   Future<Either<Exception, List<DonorSearchResult>>> getAllNearbyDonors({
     required double userLatitude,
     required double userLongitude,
-    required double radiusKm = AppConstants.PROXIMITY_RADIUS_KM,
+    double radiusKm = AppConstants.PROXIMITY_RADIUS_KM,
   }) async {
     try {
       final donors = await remoteDataSource.getAllDonors();
@@ -85,8 +87,7 @@ class DonorRepositoryImpl implements DonorRepository {
           .toList();
 
       // Apply proximity filter
-      final nearbyDonorsWithDistance =
-          GeolocationUtils.filterDonorsByProximity(
+      final nearbyDonorsWithDistance = GeolocationUtils.filterDonorsByProximity(
         donors: visibleDonors,
         userLat: userLatitude,
         userLon: userLongitude,
@@ -95,11 +96,13 @@ class DonorRepositoryImpl implements DonorRepository {
 
       // Convert to DonorSearchResult
       final results = nearbyDonorsWithDistance
-          .map((entry) => DonorSearchResultModel(
-                donor: entry.key as dynamic,
-                distanceKm: entry.value,
-                isWithinProximity: true,
-              ))
+          .map(
+            (entry) => DonorSearchResultModel(
+              donor: entry.key as dynamic,
+              distanceKm: entry.value,
+              isWithinProximity: true,
+            ),
+          )
           .toList();
 
       return Right(results);
@@ -130,12 +133,12 @@ class DonorRepositoryImpl implements DonorRepository {
 
   @override
   Future<Either<Exception, List<DonorSearchResult>>> advancedSearch({
-    required String? bloodGroup,
-    required String? district,
-    required double? userLatitude,
-    required double? userLongitude,
-    required double radiusKm = AppConstants.PROXIMITY_RADIUS_KM,
-    required bool availableOnly = true,
+    String? bloodGroup,
+    String? district,
+    double? userLatitude,
+    double? userLongitude,
+    double radiusKm = AppConstants.PROXIMITY_RADIUS_KM,
+    bool availableOnly = true,
   }) async {
     try {
       var donors = await remoteDataSource.getAllDonors();
@@ -155,8 +158,7 @@ class DonorRepositoryImpl implements DonorRepository {
 
       // Apply district filter
       if (district != null && district.isNotEmpty) {
-        donors =
-            donors.where((d) => d.district == district).toList();
+        donors = donors.where((d) => d.district == district).toList();
       }
 
       // Apply location-based proximity filter
@@ -165,27 +167,31 @@ class DonorRepositoryImpl implements DonorRepository {
       if (userLatitude != null && userLongitude != null) {
         final nearbyDonorsWithDistance =
             GeolocationUtils.filterDonorsByProximity(
-          donors: donors,
-          userLat: userLatitude,
-          userLon: userLongitude,
-          radiusKm: radiusKm,
-        );
+              donors: donors,
+              userLat: userLatitude,
+              userLon: userLongitude,
+              radiusKm: radiusKm,
+            );
 
         results = nearbyDonorsWithDistance
-            .map((entry) => DonorSearchResultModel(
-                  donor: entry.key as dynamic,
-                  distanceKm: entry.value,
-                  isWithinProximity: true,
-                ))
+            .map(
+              (entry) => DonorSearchResultModel(
+                donor: entry.key as dynamic,
+                distanceKm: entry.value,
+                isWithinProximity: true,
+              ),
+            )
             .toList();
       } else {
         // No location filter, add all donors with 0 distance
         results = donors
-            .map((donor) => DonorSearchResultModel(
-                  donor: donor as dynamic,
-                  distanceKm: 0,
-                  isWithinProximity: false,
-                ))
+            .map(
+              (donor) => DonorSearchResultModel(
+                donor: donor as dynamic,
+                distanceKm: 0,
+                isWithinProximity: false,
+              ),
+            )
             .toList();
       }
 

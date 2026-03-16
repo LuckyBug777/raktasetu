@@ -14,9 +14,5 @@ class DonorSearchResult extends Equatable {
   });
 
   @override
-  List<Object?> get props => [
-    donor,
-    distanceKm,
-    isWithinProximity,
-  ];
+  List<Object?> get props => [donor, distanceKm, isWithinProximity];
 }

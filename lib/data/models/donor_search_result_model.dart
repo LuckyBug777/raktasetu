@@ -8,10 +8,10 @@ class DonorSearchResultModel extends DonorSearchResult {
     required double distanceKm,
     required bool isWithinProximity,
   }) : super(
-    donor: donor,
-    distanceKm: distanceKm,
-    isWithinProximity: isWithinProximity,
-  );
+         donor: donor,
+         distanceKm: distanceKm,
+         isWithinProximity: isWithinProximity,
+       );
 
   factory DonorSearchResultModel.fromEntity(DonorSearchResult result) {
     return DonorSearchResultModel(

@@ -4,10 +4,12 @@ import 'package:raktasetu/core/constants/app_constants.dart';
 import 'package:raktasetu/core/theme/app_theme.dart';
 import 'package:raktasetu/core/utils/location_service.dart';
 import 'package:raktasetu/presentation/bloc/donor_search_bloc.dart';
+import 'package:raktasetu/presentation/pages/profile_page.dart';
 import 'package:raktasetu/presentation/widgets/blood_group_selector.dart';
 import 'package:raktasetu/presentation/widgets/district_selector.dart';
 import 'package:raktasetu/presentation/widgets/donor_card.dart';
-import 'package:raktasetu/presentation/widgets/common_widgets.dart';
+import 'package:raktasetu/presentation/widgets/common_widgets.dart'
+    as custom_widgets;
 
 /// Donor Search Page - Main UI for searching donors
 class DonorSearchPage extends StatefulWidget {
@@ -19,12 +21,9 @@ class DonorSearchPage extends StatefulWidget {
 
 class _DonorSearchPageState extends State<DonorSearchPage> {
   late DonorSearchBloc _searchBloc;
-  
+
   String? _selectedBloodGroup;
   String? _selectedDistrict;
-  bool _searchByLocation = false;
-  double? _userLatitude;
-  double? _userLongitude;
 
   @override
   void initState() {
@@ -42,9 +41,9 @@ class _DonorSearchPageState extends State<DonorSearchPage> {
     }
 
     if (_selectedDistrict == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a district')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select a district')));
       return;
     }
 
@@ -67,8 +66,6 @@ class _DonorSearchPageState extends State<DonorSearchPage> {
 
     try {
       final location = await LocationService.getCurrentLocation();
-      _userLatitude = location.latitude;
-      _userLongitude = location.longitude;
 
       _searchBloc.add(
         SearchDonorsByLocationEvent(
@@ -78,14 +75,10 @@ class _DonorSearchPageState extends State<DonorSearchPage> {
           radiusKm: AppConstants.PROXIMITY_RADIUS_KM,
         ),
       );
-
-      setState(() {
-        _searchByLocation = true;
-      });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Location error: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Location error: $e')));
     }
   }
 
@@ -93,8 +86,6 @@ class _DonorSearchPageState extends State<DonorSearchPage> {
   void _findNearbyDonors() async {
     try {
       final location = await LocationService.getCurrentLocation();
-      _userLatitude = location.latitude;
-      _userLongitude = location.longitude;
 
       _searchBloc.add(
         GetNearbyDonorsEvent(
@@ -103,14 +94,10 @@ class _DonorSearchPageState extends State<DonorSearchPage> {
           radiusKm: AppConstants.PROXIMITY_RADIUS_KM,
         ),
       );
-
-      setState(() {
-        _searchByLocation = true;
-      });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Location error: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Location error: $e')));
     }
   }
 
@@ -119,9 +106,6 @@ class _DonorSearchPageState extends State<DonorSearchPage> {
     setState(() {
       _selectedBloodGroup = null;
       _selectedDistrict = null;
-      _searchByLocation = false;
-      _userLatitude = null;
-      _userLongitude = null;
     });
     _searchBloc.add(const ClearSearchEvent());
   }
@@ -136,6 +120,7 @@ class _DonorSearchPageState extends State<DonorSearchPage> {
         ),
         elevation: 0,
       ),
+      drawer: _buildDrawer(context),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -168,7 +153,7 @@ class _DonorSearchPageState extends State<DonorSearchPage> {
                         },
                       ),
                       const SizedBox(height: 24),
-                      
+
                       // Search Buttons
                       Row(
                         children: [
@@ -228,22 +213,19 @@ class _DonorSearchPageState extends State<DonorSearchPage> {
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               // Search Results Section
               const Text(
                 'Results',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
-              
+
               BlocBuilder<DonorSearchBloc, DonorSearchState>(
                 bloc: _searchBloc,
                 builder: (context, state) {
                   if (state is DonorSearchInitial) {
-                    return EmptyStateWidget(
+                    return custom_widgets.EmptyStateWidget(
                       title: 'Start Searching',
                       message:
                           'Select blood group and search method to find donors',
@@ -252,11 +234,11 @@ class _DonorSearchPageState extends State<DonorSearchPage> {
                   }
 
                   if (state is DonorSearchLoading) {
-                    return const LoadingWidget();
+                    return const custom_widgets.LoadingWidget();
                   }
 
                   if (state is DonorSearchEmpty) {
-                    return EmptyStateWidget(
+                    return custom_widgets.EmptyStateWidget(
                       title: 'No Donors Found',
                       message: state.message,
                       icon: Icons.sentiment_dissatisfied,
@@ -265,7 +247,7 @@ class _DonorSearchPageState extends State<DonorSearchPage> {
                   }
 
                   if (state is DonorSearchFailure) {
-                    return ErrorWidget(
+                    return custom_widgets.ErrorWidget(
                       message: state.message,
                       onRetry: _clearSearch,
                     );
@@ -277,8 +259,7 @@ class _DonorSearchPageState extends State<DonorSearchPage> {
                         Padding(
                           padding: const EdgeInsets.only(bottom: 12),
                           child: Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
                                 'Found ${state.totalCount} donor(s)',
@@ -292,8 +273,9 @@ class _DonorSearchPageState extends State<DonorSearchPage> {
                                   state.searchType.toUpperCase(),
                                   style: const TextStyle(fontSize: 11),
                                 ),
-                                backgroundColor: AppTheme.bloodRed
-                                    .withOpacity(0.2),
+                                backgroundColor: AppTheme.bloodRed.withOpacity(
+                                  0.2,
+                                ),
                               ),
                             ],
                           ),
@@ -328,6 +310,115 @@ class _DonorSearchPageState extends State<DonorSearchPage> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// Build Navigation Drawer
+  Widget _buildDrawer(BuildContext context) {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          // Drawer Header
+          DrawerHeader(
+            decoration: BoxDecoration(color: AppTheme.bloodRed),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Center(
+                    child: Text('👤', style: TextStyle(fontSize: 30)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'John Doe',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  '+91 98765 43210',
+                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+
+          // Menu Items
+          ListTile(
+            leading: const Icon(Icons.home),
+            title: const Text('Find Donors'),
+            onTap: () => Navigator.pop(context),
+          ),
+          ListTile(
+            leading: const Icon(Icons.person),
+            title: const Text('My Profile'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfilePage()),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.favorite),
+            title: const Text('My Donations'),
+            onTap: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('Coming soon')));
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.notifications),
+            title: const Text('Notifications'),
+            onTap: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('No new notifications')),
+              );
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.info),
+            title: const Text('About'),
+            onTap: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('RaktaSetu v1.0.0 - Blood Donation Network'),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.red),
+            title: const Text('Logout', style: TextStyle(color: Colors.red)),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/login',
+                (route) => false,
+              );
+            },
+          ),
+        ],
       ),
     );
   }

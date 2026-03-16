@@ -1,6 +1,5 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:raktasetu/core/constants/app_constants.dart';
 import 'package:raktasetu/domain/entities/donor_search_result.dart';
 import 'package:raktasetu/domain/usecases/search_donors_by_location_usecase.dart';
 import 'package:raktasetu/domain/usecases/search_donors_by_district_usecase.dart';
@@ -103,11 +102,13 @@ class DonorSearchBloc extends Bloc<DonorSearchEvent, DonorSearchState> {
         } else {
           // Convert Donor to DonorSearchResult for consistent display
           final searchResults = donors
-              .map((donor) => DonorSearchResult(
-                    donor: donor,
-                    distanceKm: 0,
-                    isWithinProximity: false,
-                  ))
+              .map(
+                (donor) => DonorSearchResult(
+                  donor: donor,
+                  distanceKm: 0,
+                  isWithinProximity: false,
+                ),
+              )
               .toList();
 
           emit(
@@ -189,9 +190,7 @@ class DonorSearchBloc extends Bloc<DonorSearchEvent, DonorSearchState> {
       (donors) {
         if (donors.isEmpty) {
           emit(
-            DonorSearchEmpty(
-              message: 'No donors match your search criteria.',
-            ),
+            DonorSearchEmpty(message: 'No donors match your search criteria.'),
           );
         } else {
           emit(

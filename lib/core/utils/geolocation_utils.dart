@@ -7,7 +7,7 @@ class GeolocationUtils {
 
   /// Calculate distance between two coordinates using Haversine formula
   /// Returns distance in kilometers
-  /// 
+  ///
   /// [lat1], [lon1]: Latitude and Longitude of point 1
   /// [lat2], [lon2]: Latitude and Longitude of point 2
   static double calculateDistance({
@@ -19,7 +19,8 @@ class GeolocationUtils {
     final dLat = _degreesToRadians(lat2 - lat1);
     final dLon = _degreesToRadians(lon2 - lon1);
 
-    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+    final a =
+        math.sin(dLat / 2) * math.sin(dLat / 2) +
         math.cos(_degreesToRadians(lat1)) *
             math.cos(_degreesToRadians(lat2)) *
             math.sin(dLon / 2) *
@@ -55,7 +56,8 @@ class GeolocationUtils {
 
   /// Filter donors by coordinates within proximity radius
   /// Returns list of (donor, distance) pairs sorted by distance
-  static List<MapEntry<T, double>> filterDonorsByProximity<T extends GeoLocatable>({
+  static List<MapEntry<T, double>>
+  filterDonorsByProximity<T extends GeoLocatable>({
     required List<T> donors,
     required double userLat,
     required double userLon,
@@ -95,7 +97,8 @@ class GeolocationUtils {
     final lat2Rad = _degreesToRadians(lat2);
 
     final y = math.sin(dLon) * math.cos(lat2Rad);
-    final x = math.cos(lat1Rad) * math.sin(lat2Rad) -
+    final x =
+        math.cos(lat1Rad) * math.sin(lat2Rad) -
         math.sin(lat1Rad) * math.cos(lat2Rad) * math.cos(dLon);
 
     final bearing = math.atan2(y, x);

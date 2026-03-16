@@ -16,14 +16,14 @@ abstract class DonorRepository {
     required String bloodGroup,
     required double userLatitude,
     required double userLongitude,
-    required double radiusKm = AppConstants.PROXIMITY_RADIUS_KM,
+    double radiusKm = AppConstants.PROXIMITY_RADIUS_KM,
   });
 
   /// Search all nearby donors within radius (any blood group)
   Future<Either<Exception, List<DonorSearchResult>>> getAllNearbyDonors({
     required double userLatitude,
     required double userLongitude,
-    required double radiusKm = AppConstants.PROXIMITY_RADIUS_KM,
+    double radiusKm = AppConstants.PROXIMITY_RADIUS_KM,
   });
 
   /// Get donor by ID
@@ -34,11 +34,11 @@ abstract class DonorRepository {
 
   /// Search donors with multiple filters
   Future<Either<Exception, List<DonorSearchResult>>> advancedSearch({
-    required String? bloodGroup,
-    required String? district,
-    required double? userLatitude,
-    required double? userLongitude,
-    required double radiusKm = AppConstants.PROXIMITY_RADIUS_KM,
-    required bool availableOnly = true,
+    String? bloodGroup,
+    String? district,
+    double? userLatitude,
+    double? userLongitude,
+    double radiusKm = AppConstants.PROXIMITY_RADIUS_KM,
+    bool availableOnly = true,
   });
 }

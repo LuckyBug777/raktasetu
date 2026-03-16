@@ -12,7 +12,7 @@ class GetNearbyDonorsUseCase {
   Future<Either<Exception, List<DonorSearchResult>>> call({
     required double userLatitude,
     required double userLongitude,
-    required double radiusKm = AppConstants.PROXIMITY_RADIUS_KM,
+    double radiusKm = AppConstants.PROXIMITY_RADIUS_KM,
   }) async {
     return await repository.getAllNearbyDonors(
       userLatitude: userLatitude,

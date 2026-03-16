@@ -9,12 +9,12 @@ class LocationModel extends Location {
     String? district,
     double? accuracy,
   }) : super(
-    latitude: latitude,
-    longitude: longitude,
-    address: address,
-    district: district,
-    accuracy: accuracy,
-  );
+         latitude: latitude,
+         longitude: longitude,
+         address: address,
+         district: district,
+         accuracy: accuracy,
+       );
 
   factory LocationModel.fromJson(Map<String, dynamic> json) {
     return LocationModel(

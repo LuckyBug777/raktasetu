@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:raktasetu/core/constants/app_constants.dart';
-import 'package:raktasetu/core/theme/app_theme.dart';
 
 /// District Selector Dropdown
 class DistrictSelector extends StatelessWidget {
@@ -22,10 +21,7 @@ class DistrictSelector extends StatelessWidget {
           padding: EdgeInsets.only(bottom: 12),
           child: Text(
             'Select District',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
         ),
         DropdownButtonFormField<String>(
@@ -36,9 +32,7 @@ class DistrictSelector extends StatelessWidget {
               horizontal: 16,
               vertical: 14,
             ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             prefixIcon: const Icon(Icons.location_city),
           ),
           items: AppConstants.karnatakaDistricts.map((district) {

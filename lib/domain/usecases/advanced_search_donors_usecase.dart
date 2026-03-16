@@ -10,12 +10,12 @@ class AdvancedSearchDonorsUseCase {
   AdvancedSearchDonorsUseCase({required this.repository});
 
   Future<Either<Exception, List<DonorSearchResult>>> call({
-    required String? bloodGroup,
-    required String? district,
-    required double? userLatitude,
-    required double? userLongitude,
-    required double radiusKm = AppConstants.PROXIMITY_RADIUS_KM,
-    required bool availableOnly = true,
+    String? bloodGroup,
+    String? district,
+    double? userLatitude,
+    double? userLongitude,
+    double radiusKm = AppConstants.PROXIMITY_RADIUS_KM,
+    bool availableOnly = true,
   }) async {
     return await repository.advancedSearch(
       bloodGroup: bloodGroup,

@@ -15,7 +15,7 @@ class BloodGroup extends Equatable {
   factory BloodGroup.fromString(String group) {
     final isPositive = group.endsWith('+');
     final primaryAbo = group.replaceAll(RegExp(r'[+-]'), '');
-    
+
     return BloodGroup(
       group: group,
       isPositive: isPositive,

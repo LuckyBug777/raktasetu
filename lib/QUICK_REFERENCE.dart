@@ -324,7 +324,7 @@ KEY CODE FILES:
 
 Core Logic:
 - lib/core/utils/geolocation_utils.dart (Haversine formula)
-- lib/domain/usecases/* (Business logic)
+- lib/domain/usecases/ (Business logic)
 
 UI:
 - lib/presentation/pages/donor_search_page.dart (Main page)

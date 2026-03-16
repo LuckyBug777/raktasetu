@@ -38,7 +38,8 @@ class Donor extends Equatable {
 
   /// Check if donor is available now
   bool get isAvailableNow {
-    return nextAvailableDate == null || DateTime.now().isAfter(nextAvailableDate!);
+    return nextAvailableDate == null ||
+        DateTime.now().isAfter(nextAvailableDate!);
   }
 
   @override

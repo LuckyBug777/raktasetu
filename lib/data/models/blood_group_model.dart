@@ -6,11 +6,7 @@ class BloodGroupModel extends BloodGroup {
     required String group,
     required bool isPositive,
     required String primaryAbo,
-  }) : super(
-    group: group,
-    isPositive: isPositive,
-    primaryAbo: primaryAbo,
-  );
+  }) : super(group: group, isPositive: isPositive, primaryAbo: primaryAbo);
 
   factory BloodGroupModel.fromJson(Map<String, dynamic> json) {
     return BloodGroupModel(
@@ -23,7 +19,7 @@ class BloodGroupModel extends BloodGroup {
   factory BloodGroupModel.fromString(String group) {
     final isPositive = group.endsWith('+');
     final primaryAbo = group.replaceAll(RegExp(r'[+-]'), '');
-    
+
     return BloodGroupModel(
       group: group,
       isPositive: isPositive,
@@ -40,10 +36,6 @@ class BloodGroupModel extends BloodGroup {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'group': group,
-      'isPositive': isPositive,
-      'primaryAbo': primaryAbo,
-    };
+    return {'group': group, 'isPositive': isPositive, 'primaryAbo': primaryAbo};
   }
 }

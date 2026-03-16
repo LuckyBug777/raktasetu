@@ -13,7 +13,7 @@ class SearchDonorsByLocationUseCase {
     required String bloodGroup,
     required double userLatitude,
     required double userLongitude,
-    required double radiusKm = AppConstants.PROXIMITY_RADIUS_KM,
+    double radiusKm = AppConstants.PROXIMITY_RADIUS_KM,
   }) async {
     return await repository.searchDonorsByLocation(
       bloodGroup: bloodGroup,

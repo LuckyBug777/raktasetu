@@ -5,10 +5,8 @@ import 'package:raktasetu/core/theme/app_theme.dart';
 class LoadingWidget extends StatelessWidget {
   final String message;
 
-  const LoadingWidget({
-    Key? key,
-    this.message = 'Searching for donors...',
-  }) : super(key: key);
+  const LoadingWidget({Key? key, this.message = 'Searching for donors...'})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -23,10 +21,7 @@ class LoadingWidget extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             message,
-            style: const TextStyle(
-              fontSize: 16,
-              color: Colors.grey,
-            ),
+            style: const TextStyle(fontSize: 16, color: Colors.grey),
           ),
         ],
       ),
@@ -57,27 +52,17 @@ class EmptyStateWidget extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 80,
-              color: Colors.grey[400],
-            ),
+            Icon(icon, size: 80, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               message,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
             if (onRetry != null) ...[
@@ -100,11 +85,8 @@ class ErrorWidget extends StatelessWidget {
   final String message;
   final VoidCallback? onRetry;
 
-  const ErrorWidget({
-    Key? key,
-    required this.message,
-    this.onRetry,
-  }) : super(key: key);
+  const ErrorWidget({Key? key, required this.message, this.onRetry})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -114,27 +96,17 @@ class ErrorWidget extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 80,
-              color: AppTheme.errorRed,
-            ),
+            Icon(Icons.error_outline, size: 80, color: AppTheme.errorRed),
             const SizedBox(height: 16),
             const Text(
               'Something went wrong',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               message,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
             if (onRetry != null) ...[

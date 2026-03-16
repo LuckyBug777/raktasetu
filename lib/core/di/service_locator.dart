@@ -6,47 +6,35 @@ import 'package:raktasetu/domain/usecases/search_donors_by_location_usecase.dart
 import 'package:raktasetu/domain/usecases/search_donors_by_district_usecase.dart';
 import 'package:raktasetu/domain/usecases/get_nearby_donors_usecase.dart';
 import 'package:raktasetu/domain/usecases/advanced_search_donors_usecase.dart';
-import 'package:raktasetu/presentation\bloc\donor_search_bloc.dart';
+import 'package:raktasetu/presentation/bloc/donor_search_bloc.dart';
 
 final getIt = GetIt.instance;
 
 /// Setup Service Locator & Dependency Injection
 void setupServiceLocator() {
   // Data Sources
-  getIt.registerSingleton<DonorRemoteDataSource>(
-    DonorRemoteDataSourceImpl(),
-  );
+  getIt.registerSingleton<DonorRemoteDataSource>(DonorRemoteDataSourceImpl());
 
   // Repositories
   getIt.registerSingleton<DonorRepository>(
-    DonorRepositoryImpl(
-      remoteDataSource: getIt<DonorRemoteDataSource>(),
-    ),
+    DonorRepositoryImpl(remoteDataSource: getIt<DonorRemoteDataSource>()),
   );
 
   // Use Cases
   getIt.registerSingleton<SearchDonorsByLocationUseCase>(
-    SearchDonorsByLocationUseCase(
-      repository: getIt<DonorRepository>(),
-    ),
+    SearchDonorsByLocationUseCase(repository: getIt<DonorRepository>()),
   );
 
   getIt.registerSingleton<SearchDonorsByDistrictUseCase>(
-    SearchDonorsByDistrictUseCase(
-      repository: getIt<DonorRepository>(),
-    ),
+    SearchDonorsByDistrictUseCase(repository: getIt<DonorRepository>()),
   );
 
   getIt.registerSingleton<GetNearbyDonorsUseCase>(
-    GetNearbyDonorsUseCase(
-      repository: getIt<DonorRepository>(),
-    ),
+    GetNearbyDonorsUseCase(repository: getIt<DonorRepository>()),
   );
 
   getIt.registerSingleton<AdvancedSearchDonorsUseCase>(
-    AdvancedSearchDonorsUseCase(
-      repository: getIt<DonorRepository>(),
-    ),
+    AdvancedSearchDonorsUseCase(repository: getIt<DonorRepository>()),
   );
 
   // BLoCs

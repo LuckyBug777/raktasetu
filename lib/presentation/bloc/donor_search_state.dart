@@ -39,10 +39,7 @@ class DonorSearchFailure extends DonorSearchState {
   final String message;
   final String errorCode;
 
-  const DonorSearchFailure({
-    required this.message,
-    required this.errorCode,
-  });
+  const DonorSearchFailure({required this.message, required this.errorCode});
 
   @override
   List<Object?> get props => [message, errorCode];
@@ -52,9 +49,7 @@ class DonorSearchFailure extends DonorSearchState {
 class DonorSearchEmpty extends DonorSearchState {
   final String message;
 
-  const DonorSearchEmpty({
-    required this.message,
-  });
+  const DonorSearchEmpty({required this.message});
 
   @override
   List<Object?> get props => [message];

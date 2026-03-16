@@ -18,11 +18,10 @@ class AppTheme {
         seedColor: bloodRed,
         brightness: Brightness.light,
         primary: bloodRed,
-        secondary: Color(0xFFF06292),
-        tertiary: Color(0xFF00BCD4),
+        secondary: const Color(0xFFF06292),
+        tertiary: const Color(0xFF00BCD4),
         error: errorRed,
         surface: white,
-        background: softGray,
       ),
       scaffoldBackgroundColor: softGray,
       appBarTheme: const AppBarTheme(
@@ -30,58 +29,6 @@ class AppTheme {
         backgroundColor: bloodRed,
         foregroundColor: white,
         centerTitle: true,
-      ),
-      cardTheme: CardTheme(
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: lightGray),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: lightGray),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: bloodRed, width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: errorRed),
-        ),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: bloodRed,
-          foregroundColor: white,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          elevation: 2,
-        ),
-      ),
-      textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          foregroundColor: bloodRed,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        ),
-      ),
-      chipTheme: ChipThemeData(
-        backgroundColor: softGray,
-        selectedColor: bloodRed,
-        labelStyle: const TextStyle(
-          color: darkGray,
-          fontSize: 14,
-        ),
       ),
     );
   }
@@ -93,7 +40,7 @@ class AppTheme {
         seedColor: bloodRed,
         brightness: Brightness.dark,
         primary: bloodRed,
-        secondary: Color(0xFFF06292),
+        secondary: const Color(0xFFF06292),
         error: errorRed,
       ),
       scaffoldBackgroundColor: const Color(0xFF121212),

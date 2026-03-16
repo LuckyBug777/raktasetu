@@ -23,10 +23,7 @@ class BloodGroupSelector extends StatelessWidget {
           padding: EdgeInsets.only(bottom: 12),
           child: Text(
             'Select Blood Group',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
         ),
         Wrap(

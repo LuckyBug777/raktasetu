@@ -19,11 +19,16 @@ class SearchDonorsByLocationEvent extends DonorSearchEvent {
     required this.bloodGroup,
     required this.userLatitude,
     required this.userLongitude,
-    required this.radiusKm = 10.0,
+    this.radiusKm = 10.0,
   });
 
   @override
-  List<Object?> get props => [bloodGroup, userLatitude, userLongitude, radiusKm];
+  List<Object?> get props => [
+    bloodGroup,
+    userLatitude,
+    userLongitude,
+    radiusKm,
+  ];
 }
 
 /// Event: Search by blood group and district
@@ -49,7 +54,7 @@ class GetNearbyDonorsEvent extends DonorSearchEvent {
   const GetNearbyDonorsEvent({
     required this.userLatitude,
     required this.userLongitude,
-    required this.radiusKm = 10.0,
+    this.radiusKm = 10.0,
   });
 
   @override

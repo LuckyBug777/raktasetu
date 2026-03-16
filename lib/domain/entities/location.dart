@@ -17,11 +17,5 @@ class Location extends Equatable {
   });
 
   @override
-  List<Object?> get props => [
-    latitude,
-    longitude,
-    address,
-    district,
-    accuracy,
-  ];
+  List<Object?> get props => [latitude, longitude, address, district, accuracy];
 }

@@ -1,5 +1,5 @@
 import 'package:raktasetu/domain/entities/donor.dart';
-import 'package:raktasetu/core\utils\geolocation_utils.dart';
+import 'package:raktasetu/core/utils/geolocation_utils.dart';
 import 'blood_group_model.dart';
 import 'location_model.dart';
 
@@ -21,21 +21,21 @@ class DonorModel extends Donor implements GeoLocatable {
     required DateTime createdAt,
     required DateTime updatedAt,
   }) : super(
-    id: id,
-    fullName: fullName,
-    phoneNumber: phoneNumber,
-    bloodGroup: bloodGroup,
-    location: location,
-    district: district,
-    isVisibleInSearch: isVisibleInSearch,
-    lastDonationDate: lastDonationDate,
-    nextAvailableDate: nextAvailableDate,
-    totalDonations: totalDonations,
-    rating: rating,
-    avatar: avatar,
-    createdAt: createdAt,
-    updatedAt: updatedAt,
-  );
+         id: id,
+         fullName: fullName,
+         phoneNumber: phoneNumber,
+         bloodGroup: bloodGroup,
+         location: location,
+         district: district,
+         isVisibleInSearch: isVisibleInSearch,
+         lastDonationDate: lastDonationDate,
+         nextAvailableDate: nextAvailableDate,
+         totalDonations: totalDonations,
+         rating: rating,
+         avatar: avatar,
+         createdAt: createdAt,
+         updatedAt: updatedAt,
+       );
 
   @override
   double get latitude => (location as LocationModel).latitude;
@@ -48,8 +48,12 @@ class DonorModel extends Donor implements GeoLocatable {
       id: json['id'] as String,
       fullName: json['fullName'] as String,
       phoneNumber: json['phoneNumber'] as String,
-      bloodGroup: BloodGroupModel.fromJson(json['bloodGroup'] as Map<String, dynamic>),
-      location: LocationModel.fromJson(json['location'] as Map<String, dynamic>),
+      bloodGroup: BloodGroupModel.fromJson(
+        json['bloodGroup'] as Map<String, dynamic>,
+      ),
+      location: LocationModel.fromJson(
+        json['location'] as Map<String, dynamic>,
+      ),
       district: json['district'] as String,
       isVisibleInSearch: json['isVisibleInSearch'] as bool? ?? true,
       lastDonationDate: DateTime.parse(json['lastDonationDate'] as String),

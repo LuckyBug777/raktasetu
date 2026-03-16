@@ -16,7 +16,7 @@ class DonorCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final donor = donorResult.donor;
-    
+
     return Card(
       elevation: 2,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -75,16 +75,18 @@ class DonorCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
-              
+
               // Distance and Availability
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.location_on, 
-                        color: AppTheme.bloodRed, 
-                        size: 18),
+                      const Icon(
+                        Icons.location_on,
+                        color: AppTheme.bloodRed,
+                        size: 18,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         '${donorResult.distanceKm.toStringAsFixed(2)} km away',
@@ -116,18 +118,20 @@ class DonorCard extends StatelessWidget {
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 12),
-              
+
               // Additional Info
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.favorite, 
-                        color: AppTheme.bloodRed, 
-                        size: 18),
+                      const Icon(
+                        Icons.favorite,
+                        color: AppTheme.bloodRed,
+                        size: 18,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         '${donor.totalDonations} donations',
@@ -138,9 +142,7 @@ class DonorCard extends StatelessWidget {
                   if (donor.rating != null)
                     Row(
                       children: [
-                        const Icon(Icons.star, 
-                          color: Colors.amber, 
-                          size: 18),
+                        const Icon(Icons.star, color: Colors.amber, size: 18),
                         const SizedBox(width: 4),
                         Text(
                           donor.rating!.toStringAsFixed(1),
