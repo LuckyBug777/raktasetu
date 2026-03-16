@@ -17,21 +17,31 @@ class DonorCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final donor = donorResult.donor;
 
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(12),
+    return InkWell(
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey[200]!),
+          borderRadius: BorderRadius.circular(12),
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header: Name and Blood Group
+              // Top Row: Name and Blood Group Badge
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: Column(
@@ -41,121 +51,186 @@ class DonorCard extends StatelessWidget {
                           donor.fullName,
                           style: const TextStyle(
                             fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black87,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          donor.district,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.location_on,
+                              size: 14,
+                              color: Colors.grey[500],
+                            ),
+                            const SizedBox(width: 3),
+                            Text(
+                              donor.district,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ),
+                  const SizedBox(width: 12),
+                  // Blood Group Badge
                   Container(
                     decoration: BoxDecoration(
                       color: AppTheme.bloodRed,
                       shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.bloodRed.withOpacity(0.3),
+                          blurRadius: 6,
+                        ),
+                      ],
                     ),
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(14),
                     child: Text(
                       donor.bloodGroup.group,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
                       ),
+                      textAlign: TextAlign.center,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
 
-              // Distance and Availability
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on,
+              // Info Grid
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    // Distance
+                    Expanded(
+                      child: _buildInfoItem(
+                        icon: Icons.navigation,
+                        label:
+                            '${donorResult.distanceKm.toStringAsFixed(1)} km',
                         color: AppTheme.bloodRed,
-                        size: 18,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '${donorResult.distanceKm.toStringAsFixed(2)} km away',
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                    ],
-                  ),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: donor.isAvailableNow
-                          ? AppTheme.successGreen.withOpacity(0.2)
-                          : Colors.orange.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    child: Text(
-                      donor.isAvailableNow ? 'Available' : 'Not Available',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: donor.isAvailableNow
-                            ? AppTheme.successGreen
-                            : Colors.orange,
-                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                  ),
-                ],
+                    Container(width: 1, height: 30, color: Colors.grey[300]),
+                    // Donations
+                    Expanded(
+                      child: _buildInfoItem(
+                        icon: Icons.favorite,
+                        label: '${donor.totalDonations}x',
+                        color: Colors.pink,
+                      ),
+                    ),
+                    Container(width: 1, height: 30, color: Colors.grey[300]),
+                    // Rating
+                    Expanded(
+                      child: _buildInfoItem(
+                        icon: Icons.star,
+                        label: donor.rating != null
+                            ? donor.rating!.toStringAsFixed(1)
+                            : 'N/A',
+                        color: Colors.amber,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-
               const SizedBox(height: 12),
 
-              // Additional Info
+              // Availability Status
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.favorite,
-                        color: AppTheme.bloodRed,
-                        size: 18,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '${donor.totalDonations} donations',
-                        style: const TextStyle(fontSize: 13),
-                      ),
-                    ],
-                  ),
-                  if (donor.rating != null)
-                    Row(
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.star, color: Colors.amber, size: 18),
-                        const SizedBox(width: 4),
-                        Text(
-                          donor.rating!.toStringAsFixed(1),
-                          style: const TextStyle(fontSize: 13),
+                        Row(
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: donor.isAvailableNow
+                                    ? AppTheme.successGreen
+                                    : Colors.orange,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              donor.isAvailableNow
+                                  ? 'Available Now'
+                                  : 'Not Available',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: donor.isAvailableNow
+                                    ? AppTheme.successGreen
+                                    : Colors.orange,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: onPressed,
+                    icon: const Icon(Icons.call, size: 16),
+                    label: const Text('Contact'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.bloodRed,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  /// Build info item
+  Widget _buildInfoItem({
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(icon, color: color, size: 18),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 }
