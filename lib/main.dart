@@ -6,6 +6,7 @@ import 'package:raktasetu/presentation/bloc/auth_bloc.dart';
 import 'package:raktasetu/presentation/bloc/donor_search_bloc.dart';
 import 'package:raktasetu/presentation/pages/donor_search_page.dart';
 import 'package:raktasetu/presentation/pages/login_page.dart';
+import 'package:raktasetu/presentation/pages/signup_page.dart';
 import 'package:raktasetu/presentation/pages/splash_page.dart';
 
 void main() {
@@ -34,6 +35,7 @@ class RaktaSetuApp extends StatelessWidget {
         home: const SplashPage(),
         routes: {
           '/splash': (context) => const SplashPage(),
+          '/signup': (context) => const SignupPage(),
           '/login': (context) => const LoginPage(),
           '/home': (context) => BlocProvider(
             create: (context) => getIt<DonorSearchBloc>(),
