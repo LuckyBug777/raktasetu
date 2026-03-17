@@ -6,6 +6,7 @@ import 'package:raktasetu/presentation/bloc/auth_bloc.dart';
 import 'package:raktasetu/presentation/bloc/donor_search_bloc.dart';
 import 'package:raktasetu/presentation/pages/donor_search_page.dart';
 import 'package:raktasetu/presentation/pages/login_page.dart';
+import 'package:raktasetu/presentation/pages/notifications_page.dart';
 import 'package:raktasetu/presentation/pages/signup_page.dart';
 import 'package:raktasetu/presentation/pages/splash_page.dart';
 
@@ -49,6 +50,7 @@ class RaktaSetuApp extends StatelessWidget {
             create: (context) => getIt<DonorSearchBloc>(),
             child: const DonorSearchPage(),
           ),
+          '/notifications': (context) => const NotificationsPage(),
         },
       ),
     );

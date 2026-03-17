@@ -5,6 +5,7 @@ import 'package:raktasetu/core/theme/app_theme.dart';
 import 'package:raktasetu/core/utils/location_service.dart';
 import 'package:raktasetu/presentation/bloc/donor_search_bloc.dart';
 import 'package:raktasetu/presentation/pages/my_donations_page.dart';
+import 'package:raktasetu/presentation/pages/notifications_page.dart';
 import 'package:raktasetu/presentation/pages/profile_page.dart';
 import 'package:raktasetu/presentation/widgets/blood_group_selector.dart';
 import 'package:raktasetu/presentation/widgets/district_selector.dart';
@@ -623,8 +624,11 @@ class _DonorSearchPageState extends State<DonorSearchPage> {
             title: const Text('Notifications'),
             onTap: () {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('No new notifications')),
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const NotificationsPage(),
+                ),
               );
             },
           ),
