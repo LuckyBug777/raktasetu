@@ -36,7 +36,15 @@ class RaktaSetuApp extends StatelessWidget {
         routes: {
           '/splash': (context) => const SplashPage(),
           '/signup': (context) => const SignupPage(),
-          '/login': (context) => const LoginPage(),
+          '/login': (context) {
+            final args =
+                ModalRoute.of(context)?.settings.arguments
+                    as Map<String, dynamic>?;
+            return LoginPage(
+              phoneNumber: args?['phoneNumber'] as String?,
+              isNewUser: args?['isNewUser'] as bool? ?? false,
+            );
+          },
           '/home': (context) => BlocProvider(
             create: (context) => getIt<DonorSearchBloc>(),
             child: const DonorSearchPage(),

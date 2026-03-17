@@ -3,7 +3,11 @@ import 'package:raktasetu/core/theme/app_theme.dart';
 
 /// OTP Login Page for Firebase authentication
 class LoginPage extends StatefulWidget {
-  const LoginPage({Key? key}) : super(key: key);
+  final String? phoneNumber;
+  final bool isNewUser;
+
+  const LoginPage({Key? key, this.phoneNumber, this.isNewUser = false})
+    : super(key: key);
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -14,6 +18,16 @@ class _LoginPageState extends State<LoginPage> {
   final _otpController = TextEditingController();
   bool _isOtpSent = false;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // If coming from signup, pre-fill phone and show OTP field
+    if (widget.phoneNumber != null && widget.isNewUser) {
+      _phoneController.text = widget.phoneNumber!;
+      _isOtpSent = true;
+    }
+  }
 
   @override
   void dispose() {
@@ -109,6 +123,8 @@ class _LoginPageState extends State<LoginPage> {
                     Text(
                       _isOtpSent
                           ? 'Enter the OTP sent to your phone'
+                          : widget.isNewUser
+                          ? 'Complete your registration'
                           : 'Login with your phone number',
                       style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                       textAlign: TextAlign.center,
