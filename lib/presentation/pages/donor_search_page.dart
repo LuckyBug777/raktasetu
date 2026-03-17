@@ -4,6 +4,7 @@ import 'package:raktasetu/core/constants/app_constants.dart';
 import 'package:raktasetu/core/theme/app_theme.dart';
 import 'package:raktasetu/core/utils/location_service.dart';
 import 'package:raktasetu/presentation/bloc/donor_search_bloc.dart';
+import 'package:raktasetu/presentation/pages/my_donations_page.dart';
 import 'package:raktasetu/presentation/pages/profile_page.dart';
 import 'package:raktasetu/presentation/widgets/blood_group_selector.dart';
 import 'package:raktasetu/presentation/widgets/district_selector.dart';
@@ -609,9 +610,12 @@ class _DonorSearchPageState extends State<DonorSearchPage> {
             title: const Text('My Donations'),
             onTap: () {
               Navigator.pop(context);
-              ScaffoldMessenger.of(
+              Navigator.push(
                 context,
-              ).showSnackBar(const SnackBar(content: Text('Coming soon')));
+                MaterialPageRoute(
+                  builder: (context) => const MyDonationsPage(),
+                ),
+              );
             },
           ),
           ListTile(
