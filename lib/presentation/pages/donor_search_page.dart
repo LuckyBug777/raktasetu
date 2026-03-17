@@ -152,43 +152,110 @@ class _DonorSearchPageState extends State<DonorSearchPage> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Premium Header Section
+            // Premium Header Section with Hero Impact
             Container(
               width: double.infinity,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
                     AppTheme.bloodRed,
-                    AppTheme.bloodRed.withOpacity(0.8),
+                    AppTheme.bloodRed.withOpacity(0.75),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(24),
-                  bottomRight: Radius.circular(24),
+                  bottomLeft: Radius.circular(28),
+                  bottomRight: Radius.circular(28),
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.bloodRed.withOpacity(0.3),
+                    blurRadius: 16,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+                padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Emergency Stats Banner
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.2),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: const [
+                              Text(
+                                '2,847',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                'Active Donors',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const Text('🩸', style: TextStyle(fontSize: 28)),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: const [
+                              Text(
+                                '12 Lives',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                'Saved This Week',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
                     const Text(
-                      'Find Blood Donors',
+                      'Save Lives Today',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 28,
+                        fontSize: 32,
                         fontWeight: FontWeight.bold,
-                        height: 1.2,
+                        height: 1.1,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Search nearby donors or filter by location',
+                      'Search donors or request blood instantly',
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.9),
                         fontSize: 14,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -232,6 +299,48 @@ class _DonorSearchPageState extends State<DonorSearchPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Featured Actions Row
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildFeaturedActionCard(
+                          icon: Icons.emergency,
+                          title: 'Request Blood',
+                          subtitle: 'Post urgent need',
+                          color: const Color(0xFFDC3545),
+                          onTap: () {
+                            Navigator.pushNamed(context, '/request-blood');
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildFeaturedActionCard(
+                          icon: Icons.local_hospital,
+                          title: 'Find Banks',
+                          subtitle: 'Locate nearby',
+                          color: const Color(0xFF0D6EFD),
+                          onTap: () {
+                            Navigator.pushNamed(context, '/blood-banks');
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildFeaturedActionCard(
+                          icon: Icons.assignment_turned_in,
+                          title: 'Check Eligible',
+                          subtitle: 'Can you donate?',
+                          color: const Color(0xFF198754),
+                          onTap: () {
+                            Navigator.pushNamed(context, '/eligibility');
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 28),
+
                   const Text(
                     'Search Filters',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -539,6 +648,57 @@ class _DonorSearchPageState extends State<DonorSearchPage> {
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
               ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Build Featured Action Card
+  Widget _buildFeaturedActionCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withOpacity(0.3)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: TextStyle(
+                color: color,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: TextStyle(color: Colors.grey[600], fontSize: 10),
               textAlign: TextAlign.center,
             ),
           ],

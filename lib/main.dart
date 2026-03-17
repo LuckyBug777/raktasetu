@@ -4,9 +4,12 @@ import 'package:raktasetu/core/di/service_locator.dart';
 import 'package:raktasetu/core/theme/app_theme.dart';
 import 'package:raktasetu/presentation/bloc/auth_bloc.dart';
 import 'package:raktasetu/presentation/bloc/donor_search_bloc.dart';
+import 'package:raktasetu/presentation/pages/blood_bank_locator_page.dart';
 import 'package:raktasetu/presentation/pages/donor_search_page.dart';
+import 'package:raktasetu/presentation/pages/eligibility_checker_page.dart';
 import 'package:raktasetu/presentation/pages/login_page.dart';
 import 'package:raktasetu/presentation/pages/notifications_page.dart';
+import 'package:raktasetu/presentation/pages/request_blood_page.dart';
 import 'package:raktasetu/presentation/pages/signup_page.dart';
 import 'package:raktasetu/presentation/pages/splash_page.dart';
 
@@ -51,6 +54,9 @@ class RaktaSetuApp extends StatelessWidget {
             child: const DonorSearchPage(),
           ),
           '/notifications': (context) => const NotificationsPage(),
+          '/request-blood': (context) => const RequestBloodPage(),
+          '/blood-banks': (context) => const BloodBankLocatorPage(),
+          '/eligibility': (context) => const EligibilityCheckerPage(),
         },
       ),
     );
