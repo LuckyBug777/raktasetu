@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:raktasetu/firebase_options.dart';
 import 'package:raktasetu/core/di/service_locator.dart';
 import 'package:raktasetu/core/theme/app_theme.dart';
 import 'package:raktasetu/presentation/bloc/auth_bloc.dart';
@@ -13,7 +15,19 @@ import 'package:raktasetu/presentation/pages/request_blood_page.dart';
 import 'package:raktasetu/presentation/pages/signup_page.dart';
 import 'package:raktasetu/presentation/pages/splash_page.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    print('✓ Firebase initialized successfully');
+  } catch (e) {
+    print('✗ Firebase initialization error: $e');
+  }
+
   // Setup Service Locator (Dependency Injection)
   setupServiceLocator();
 

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:raktasetu/core/constants/app_constants.dart';
+import 'package:raktasetu/core/di/service_locator.dart';
+import 'package:raktasetu/core/services/firebase_auth_service.dart';
 import 'package:raktasetu/core/theme/app_theme.dart';
 
 /// Signup Page - User registration with profile information
@@ -107,16 +109,43 @@ class _SignupPageState extends State<SignupPage> {
   void _completeSignup() {
     setState(() => _isLoading = true);
 
-    // TODO: Call AuthBloc to register user
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) {
-        // Navigate to OTP verification
-        Navigator.of(context).pushReplacementNamed(
-          '/login',
-          arguments: {'phoneNumber': _phoneController.text, 'isNewUser': true},
-        );
-      }
-    });
+    final authService = getIt<FirebaseAuthService>();
+
+    authService.sendOtp(
+      _phoneController.text,
+      onCodeSent: (verificationId) {
+        // Store signup data temporarily
+        final signupData = {
+          'name': _nameController.text,
+          'bloodGroup': _selectedBloodGroup,
+          'district': _selectedDistrict,
+          'phoneNumber': _phoneController.text,
+        };
+
+        if (mounted) {
+          Navigator.of(context).pushReplacementNamed(
+            '/login',
+            arguments: {
+              'phoneNumber': _phoneController.text,
+              'isNewUser': true,
+              'signupData': signupData,
+              'verificationId': verificationId,
+            },
+          );
+        }
+      },
+      onError: (exception) {
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(exception.message ?? 'Failed to send OTP'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      },
+    );
   }
 
   /// Go back to previous step

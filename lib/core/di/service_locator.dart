@@ -1,4 +1,6 @@
 import 'package:get_it/get_it.dart';
+import 'package:raktasetu/core/services/firebase_auth_service.dart';
+import 'package:raktasetu/core/services/firestore_service.dart';
 import 'package:raktasetu/data/datasources/donor_remote_datasource.dart';
 import 'package:raktasetu/data/repositories/donor_repository_impl.dart';
 import 'package:raktasetu/domain/repositories/donor_repository.dart';
@@ -12,6 +14,10 @@ final getIt = GetIt.instance;
 
 /// Setup Service Locator & Dependency Injection
 void setupServiceLocator() {
+  // Firebase Services
+  getIt.registerSingleton<FirebaseAuthService>(FirebaseAuthService());
+  getIt.registerSingleton<FirestoreService>(FirestoreService());
+
   // Data Sources
   getIt.registerSingleton<DonorRemoteDataSource>(DonorRemoteDataSourceImpl());
 

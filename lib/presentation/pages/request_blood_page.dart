@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:raktasetu/core/constants/app_constants.dart';
+import 'package:raktasetu/core/di/service_locator.dart';
+import 'package:raktasetu/core/services/firestore_service.dart';
+import 'package:raktasetu/core/services/firebase_auth_service.dart';
 import 'package:raktasetu/core/theme/app_theme.dart';
 
 /// Blood Request Page
@@ -50,21 +53,59 @@ class _RequestBloodPageState extends State<RequestBloodPage> {
         _selectedUrgency != null) {
       setState(() => _isLoading = true);
 
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 2));
+      try {
+        final authService = getIt<FirebaseAuthService>();
+        final firestoreService = getIt<FirestoreService>();
+        final currentUser = authService.currentUser;
 
-      if (mounted) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Blood request posted! Donors notified. Thank you!'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 3),
-          ),
+        if (currentUser == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please login to post blood requests'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+          setState(() => _isLoading = false);
+          return;
+        }
+
+        // Create blood request in Firestore
+        await firestoreService.createBloodRequest(
+          requesterUid: currentUser.uid,
+          patientName: _patientNameController.text,
+          hospitalName: _hospitalController.text,
+          bloodGroup: _selectedBloodGroup!,
+          units: int.parse(_unitsController.text),
+          urgency: _selectedUrgency!,
+          contactNumber: _contactController.text,
+          notes: _notesController.text.isEmpty ? null : _notesController.text,
         );
-        Future.delayed(const Duration(seconds: 1), () {
-          Navigator.pop(context);
-        });
+
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Blood request posted! Donors notified. Thank you!',
+              ),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 3),
+            ),
+          );
+          Future.delayed(const Duration(seconds: 1), () {
+            Navigator.pop(context);
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: ${e.toString()}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
