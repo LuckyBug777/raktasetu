@@ -1,4 +1,8 @@
 import 'package:raktasetu/data/models/donor_model.dart';
+import 'package:raktasetu/data/models/blood_group_model.dart';
+import 'package:raktasetu/data/models/location_model.dart';
+import 'package:raktasetu/core/di/service_locator.dart';
+import 'package:raktasetu/core/services/firestore_service.dart';
 
 /// Abstract Data Source for Donor Remote Operations
 abstract class DonorRemoteDataSource {
@@ -17,9 +21,8 @@ abstract class DonorRemoteDataSource {
 
 /// Donor Remote Data Source Implementation (Firebase Firestore)
 class DonorRemoteDataSourceImpl implements DonorRemoteDataSource {
-  // Inject Firebase services here
-  // final FirebaseFirestore firestore;
-  // DonorRemoteDataSourceImpl({required this.firestore});
+  
+  FirestoreService get _firestoreService => getIt<FirestoreService>();
 
   @override
   Future<List<DonorModel>> searchDonorsByDistrict({
@@ -27,15 +30,26 @@ class DonorRemoteDataSourceImpl implements DonorRemoteDataSource {
     required String district,
   }) async {
     try {
-      // TODO: Implement Firebase Firestore query
-      // Query structure:
-      // db.collection('donors')
-      //   .where('bloodGroup.group', isEqualTo: bloodGroup)
-      //   .where('district', isEqualTo: district)
-      //   .where('isVisibleInSearch', isEqualTo: true)
-      //   .get()
-
-      return [];
+      final domainDonors = await _firestoreService.getDonorsByDistrict(
+        district: district,
+        bloodGroup: bloodGroup,
+      );
+      
+      // Convert domain DonorModel to data DonorModel
+      return domainDonors.map((d) => DonorModel(
+        id: d.id,
+        fullName: d.name,
+        phoneNumber: d.phoneNumber,
+        bloodGroup: BloodGroupModel.fromString(d.bloodGroup),
+        location: LocationModel(latitude: d.latitude, longitude: d.longitude, district: d.district),
+        district: d.district,
+        lastDonationDate: d.lastDonationDate ?? DateTime.now().subtract(const Duration(days: 365)),
+        isVisibleInSearch: d.isAvailable,
+        totalDonations: d.donations,
+        rating: d.rating,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      )).toList();
     } catch (e) {
       throw Exception('Failed to search donors: $e');
     }
@@ -44,13 +58,23 @@ class DonorRemoteDataSourceImpl implements DonorRemoteDataSource {
   @override
   Future<List<DonorModel>> getAllDonors() async {
     try {
-      // TODO: Implement Firebase Firestore query
-      // Query structure:
-      // db.collection('donors')
-      //   .where('isVisibleInSearch', isEqualTo: true)
-      //   .get()
-
-      return [];
+      final domainDonors = await _firestoreService.getAllDonors();
+      
+      // Convert domain DonorModel to data DonorModel
+      return domainDonors.map((d) => DonorModel(
+        id: d.id,
+        fullName: d.name,
+        phoneNumber: d.phoneNumber,
+        bloodGroup: BloodGroupModel.fromString(d.bloodGroup),
+        location: LocationModel(latitude: d.latitude, longitude: d.longitude, district: d.district),
+        district: d.district,
+        lastDonationDate: d.lastDonationDate ?? DateTime.now().subtract(const Duration(days: 365)),
+        isVisibleInSearch: d.isAvailable,
+        totalDonations: d.donations,
+        rating: d.rating,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      )).toList();
     } catch (e) {
       throw Exception('Failed to fetch donors: $e');
     }
@@ -59,12 +83,26 @@ class DonorRemoteDataSourceImpl implements DonorRemoteDataSource {
   @override
   Future<DonorModel> getDonorById(String donorId) async {
     try {
-      // TODO: Implement Firebase Firestore query
-      // db.collection('donors').doc(donorId).get()
-
-      throw Exception('Donor not found');
+      final d = await _firestoreService.getDonorProfile(donorId);
+      if (d == null) throw Exception('Donor not found');
+      
+      return DonorModel(
+        id: d.id,
+        fullName: d.name,
+        phoneNumber: d.phoneNumber,
+        bloodGroup: BloodGroupModel.fromString(d.bloodGroup),
+        location: LocationModel(latitude: d.latitude, longitude: d.longitude, district: d.district),
+        district: d.district,
+        lastDonationDate: d.lastDonationDate ?? DateTime.now().subtract(const Duration(days: 365)),
+        isVisibleInSearch: d.isAvailable,
+        totalDonations: d.donations,
+        rating: d.rating,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
     } catch (e) {
       throw Exception('Failed to fetch donor: $e');
     }
   }
 }
+

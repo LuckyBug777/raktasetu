@@ -17,6 +17,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<VerifyOtpEvent>(_onVerifyOtp);
     on<LogoutEvent>(_onLogout);
     on<CheckAuthStatusEvent>(_onCheckAuthStatus);
+    on<LoginSuccessEvent>((event, emit) {
+      emit(AuthSuccess(userId: event.userId, userData: event.userData));
+    });
   }
 
   /// Handle Send OTP event
@@ -56,7 +59,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       );
 
       if (userCredential != null) {
-        emit(AuthSuccess(userId: userCredential.user!.uid));
+        final userData = await _authService.getUserProfile(userCredential.user!.uid);
+        emit(AuthSuccess(userId: userCredential.user!.uid, userData: userData));
       } else {
         emit(const AuthFailure(message: 'Failed to verify OTP'));
       }
@@ -86,7 +90,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     try {
       final currentUser = _authService.currentUser;
       if (currentUser != null) {
-        emit(AuthSuccess(userId: currentUser.uid));
+        final userData = await _authService.getUserProfile(currentUser.uid);
+        emit(AuthSuccess(userId: currentUser.uid, userData: userData));
       } else {
         emit(const AuthInitial());
       }

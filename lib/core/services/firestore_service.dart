@@ -14,7 +14,83 @@ class FirestoreService {
 
   FirestoreService._internal();
 
+  // ============ PHONE VALIDATION ============
+
+  /// Normalize any phone format to last 10 digits for Firestore comparison.
+  String _normalize(String phone) {
+    final digits = phone.replaceAll(RegExp(r'\D'), '');
+    return digits.length >= 10 ? digits.substring(digits.length - 10) : digits;
+  }
+
+  /// Returns true if a user with this phone number exists in Firestore.
+  /// Checks both 10-digit and +91-prefixed formats.
+  Future<bool> checkPhoneExists(String phoneNumber) async {
+    final normalized = _normalize(phoneNumber);
+    final withCountryCode = '+91$normalized';
+
+    // Check 10-digit format (e.g. "8546954246")
+    var result = await _firestore
+        .collection('users')
+        .where('phoneNumber', isEqualTo: normalized)
+        .limit(1)
+        .get();
+    if (result.docs.isNotEmpty) return true;
+
+    // Also check +91 prefix format (e.g. "+918546954246")
+    result = await _firestore
+        .collection('users')
+        .where('phoneNumber', isEqualTo: withCountryCode)
+        .limit(1)
+        .get();
+    return result.docs.isNotEmpty;
+  }
+
   // ============ DONOR OPERATIONS ============
+
+  // ============ LOCATION SYNC ============
+
+  /// Compares [newLat]/[newLng] to what is stored in Firestore for [uid].
+  /// Writes an update only if the user has moved more than ~1 km or the
+  /// district string changed. Silent no-op on any error.
+  Future<void> updateLocationIfChanged(
+    String uid,
+    double newLat,
+    double newLng,
+    String newDistrict,
+  ) async {
+    try {
+      final doc = await _firestore.collection('users').doc(uid).get();
+      final data = doc.data();
+      if (data == null) return;
+
+      final storedLat = (data['latitude'] as num?)?.toDouble();
+      final storedLng = (data['longitude'] as num?)?.toDouble();
+      final storedDistrict = (data['district'] as String?) ?? '';
+
+      // ~0.009 degrees ≈ 1 km — skip update if within threshold
+      if (storedLat != null && storedLng != null) {
+        final latDiff = (newLat - storedLat).abs();
+        final lngDiff = (newLng - storedLng).abs();
+        if (latDiff < 0.009 && lngDiff < 0.009 && storedDistrict == newDistrict) {
+          return; // no meaningful change
+        }
+      }
+
+      final Map<String, dynamic> updates = {
+        'latitude': newLat,
+        'longitude': newLng,
+        'lastLocationUpdate': FieldValue.serverTimestamp(),
+      };
+      // Only overwrite district if geocoding returned a non-empty value
+      if (newDistrict.isNotEmpty) updates['district'] = newDistrict;
+
+      await _firestore.collection('users').doc(uid).update(updates);
+    } catch (_) {
+      // Silent fail — location sync is non-critical
+    }
+  }
+
+
 
   /// Get all donors near a location
   Future<List<DonorModel>> getDonorsNearby({
@@ -25,9 +101,9 @@ class FirestoreService {
   }) async {
     try {
       final query = await _firestore
-          .collection('donors')
+          .collection('users')
           .where('bloodGroup', isEqualTo: bloodGroup)
-          .where('isAvailable', isEqualTo: true)
+          //.where('isComplete', isEqualTo: true)
           .get();
 
       final donors = query.docs.map((doc) {
@@ -62,10 +138,10 @@ class FirestoreService {
   }) async {
     try {
       final query = await _firestore
-          .collection('donors')
+          .collection('users')
           .where('district', isEqualTo: district)
           .where('bloodGroup', isEqualTo: bloodGroup)
-          .where('isAvailable', isEqualTo: true)
+          //.where('isComplete', isEqualTo: true)
           .get();
 
       final donors = query.docs.map((doc) {
@@ -96,7 +172,7 @@ class FirestoreService {
   /// Get donor profile
   Future<DonorModel?> getDonorProfile(String uid) async {
     try {
-      final doc = await _firestore.collection('donors').doc(uid).get();
+      final doc = await _firestore.collection('users').doc(uid).get();
       if (!doc.exists) return null;
 
       final data = doc.data()!;
@@ -127,13 +203,66 @@ class FirestoreService {
     required double longitude,
   }) async {
     try {
-      await _firestore.collection('donors').doc(uid).update({
+      await _firestore.collection('users').doc(uid).update({
         'latitude': latitude,
         'longitude': longitude,
         'updatedAt': FieldValue.serverTimestamp(),
       });
     } catch (e) {
       throw Exception('Failed to update location: $e');
+    }
+  }
+
+  /// Get all registered donors
+  Future<List<DonorModel>> getAllDonors() async {
+    try {
+      final query = await _firestore.collection('users').get();
+      final donors = query.docs.map((doc) {
+        final data = doc.data();
+        return DonorModel(
+          id: doc.id,
+          name: data['name'] ?? '',
+          phoneNumber: data['phoneNumber'] ?? '',
+          bloodGroup: data['bloodGroup'] ?? '',
+          latitude: data['latitude'] ?? 0,
+          longitude: data['longitude'] ?? 0,
+          district: data['district'] ?? '',
+          lastDonationDate: data['lastDonationDate'] != null
+              ? (data['lastDonationDate'] as Timestamp).toDate()
+              : null,
+          isAvailable: data['isAvailable'] ?? true, // Default to true
+          donations: data['donations'] ?? 0,
+          rating: (data['rating'] ?? 5).toDouble(),
+        );
+      }).toList();
+
+      return donors;
+    } catch (e) {
+      throw Exception('Failed to fetch all donors: $e');
+    }
+  }
+
+  /// Get aggregated app stats
+  Future<Map<String, int>> getGlobalAppStats() async {
+    try {
+      final usersSnapshot = await _firestore.collection('users').get();
+      int activeDonors = usersSnapshot.docs.length;
+      int livesSaved = 0;
+
+      for (var doc in usersSnapshot.docs) {
+        final data = doc.data();
+        int units = data['unitsCollected'] ?? 0;
+        int donations = data['donations'] ?? 0;
+        // Approximation: 1 unit can save 3 lives
+        livesSaved += (units > 0 ? units * 3 : donations * 3);
+      }
+
+      return {
+        'activeDonors': activeDonors,
+        'livesSaved': livesSaved,
+      };
+    } catch (e) {
+      return {'activeDonors': 0, 'livesSaved': 0};
     }
   }
 
@@ -177,10 +306,9 @@ class FirestoreService {
       final query = await _firestore
           .collection('bloodRequests')
           .where('status', isEqualTo: 'active')
-          .orderBy('createdAt', descending: true)
           .get();
 
-      return query.docs.map((doc) {
+      final requests = query.docs.map((doc) {
         final data = doc.data();
         return BloodRequestModel(
           id: doc.id,
@@ -198,6 +326,11 @@ class FirestoreService {
               : DateTime.now(),
         );
       }).toList();
+
+      // Sort natively in Dart to avoid Firebase requiring a composite index
+      requests.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      
+      return requests;
     } catch (e) {
       throw Exception('Failed to fetch blood requests: $e');
     }
@@ -252,7 +385,19 @@ class FirestoreService {
 
   // ============ BLOOD BANK OPERATIONS ============
 
-  /// Get all blood banks
+  /// Get all blood banks as a real-time stream
+  Stream<List<Map<String, dynamic>>> getBloodBanksStream() {
+    return _firestore
+        .collection('bloodBanks')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) {
+              final data = doc.data();
+              return {'id': doc.id, ...data};
+            }).toList());
+  }
+
+  /// Get all blood banks (one-time fetch)
   Future<List<Map<String, dynamic>>> getBloodBanks() async {
     try {
       final query = await _firestore.collection('bloodBanks').get();
@@ -262,6 +407,84 @@ class FirestoreService {
       }).toList();
     } catch (e) {
       throw Exception('Failed to fetch blood banks: $e');
+    }
+  }
+
+  /// Add a new blood bank / hospital entry
+  Future<void> addBloodBank({
+    required String type,
+    required String name,
+    required String address,
+    required Map<String, int> bloodUnits,
+  }) async {
+    try {
+      await _firestore.collection('bloodBanks').add({
+        'type': type,
+        'name': name,
+        'address': address,
+        'aPlus': bloodUnits['A+'] ?? 0,
+        'aMinus': bloodUnits['A-'] ?? 0,
+        'bPlus': bloodUnits['B+'] ?? 0,
+        'bMinus': bloodUnits['B-'] ?? 0,
+        'oPlus': bloodUnits['O+'] ?? 0,
+        'oMinus': bloodUnits['O-'] ?? 0,
+        'abPlus': bloodUnits['AB+'] ?? 0,
+        'abMinus': bloodUnits['AB-'] ?? 0,
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      throw Exception('Failed to add blood bank: $e');
+    }
+  }
+
+  /// Update an existing blood bank / hospital entry
+  Future<void> updateBloodBank({
+    required String id,
+    required String type,
+    required String name,
+    required String address,
+    required Map<String, int> bloodUnits,
+  }) async {
+    try {
+      await _firestore.collection('bloodBanks').doc(id).update({
+        'type': type,
+        'name': name,
+        'address': address,
+        'aPlus': bloodUnits['A+'] ?? 0,
+        'aMinus': bloodUnits['A-'] ?? 0,
+        'bPlus': bloodUnits['B+'] ?? 0,
+        'bMinus': bloodUnits['B-'] ?? 0,
+        'oPlus': bloodUnits['O+'] ?? 0,
+        'oMinus': bloodUnits['O-'] ?? 0,
+        'abPlus': bloodUnits['AB+'] ?? 0,
+        'abMinus': bloodUnits['AB-'] ?? 0,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      throw Exception('Failed to update blood bank: $e');
+    }
+  }
+
+  /// Delete a blood bank / hospital entry
+  Future<void> deleteBloodBank(String id) async {
+    try {
+      await _firestore.collection('bloodBanks').doc(id).delete();
+    } catch (e) {
+      throw Exception('Failed to delete blood bank: $e');
+    }
+  }
+
+  /// Verify admin password against Firestore
+  Future<bool> verifyAdminPassword(String uid, String password) async {
+    try {
+      final doc = await _firestore.collection('users').doc(uid).get();
+      if (!doc.exists) return false;
+      final data = doc.data()!;
+      final storedPassword = data['adminPassword'] as String?;
+      return storedPassword != null && storedPassword == password;
+    } catch (e) {
+      return false;
     }
   }
 

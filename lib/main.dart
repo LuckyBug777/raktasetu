@@ -14,6 +14,10 @@ import 'package:raktasetu/presentation/pages/notifications_page.dart';
 import 'package:raktasetu/presentation/pages/request_blood_page.dart';
 import 'package:raktasetu/presentation/pages/signup_page.dart';
 import 'package:raktasetu/presentation/pages/splash_page.dart';
+import 'package:raktasetu/presentation/pages/about_us_page.dart';
+import 'package:raktasetu/presentation/pages/admin_verify_page.dart';
+import 'package:raktasetu/presentation/pages/admin_dashboard_page.dart';
+import 'package:raktasetu/presentation/pages/admin_entry_form_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,6 +28,7 @@ void main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
     print('✓ Firebase initialized successfully');
+    print('🆔 Project Number: ${DefaultFirebaseOptions.currentPlatform.messagingSenderId}');
   } catch (e) {
     print('✗ Firebase initialization error: $e');
   }
@@ -41,8 +46,8 @@ class RaktaSetuApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider(create: (context) => AuthBloc()),
-        BlocProvider(create: (context) => getIt<DonorSearchBloc>()),
+        BlocProvider(create: (context) => AuthBloc()..add(const CheckAuthStatusEvent())),
+        BlocProvider.value(value: getIt<DonorSearchBloc>()),
       ],
       child: MaterialApp(
         title: 'RaktaSetu - Blood Donation',
@@ -56,21 +61,26 @@ class RaktaSetuApp extends StatelessWidget {
           '/signup': (context) => const SignupPage(),
           '/login': (context) {
             final args =
-                ModalRoute.of(context)?.settings.arguments
-                    as Map<String, dynamic>?;
+            ModalRoute.of(context)?.settings.arguments
+            as Map<String, dynamic>?;
             return LoginPage(
               phoneNumber: args?['phoneNumber'] as String?,
               isNewUser: args?['isNewUser'] as bool? ?? false,
             );
           },
-          '/home': (context) => BlocProvider(
-            create: (context) => getIt<DonorSearchBloc>(),
+          '/home': (context) => BlocProvider.value(
+            value: getIt<DonorSearchBloc>(),
             child: const DonorSearchPage(),
           ),
           '/notifications': (context) => const NotificationsPage(),
           '/request-blood': (context) => const RequestBloodPage(),
           '/blood-banks': (context) => const BloodBankLocatorPage(),
           '/eligibility': (context) => const EligibilityCheckerPage(),
+          '/about-us': (context) => const AboutUsPage(),
+          // Admin routes
+          '/admin-verify': (context) => const AdminVerifyPage(),
+          '/admin-dashboard': (context) => const AdminDashboardPage(),
+          '/admin-form': (context) => const AdminEntryFormPage(),
         },
       ),
     );

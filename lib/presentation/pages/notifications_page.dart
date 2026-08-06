@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:raktasetu/core/theme/app_theme.dart';
+import 'package:raktasetu/core/di/service_locator.dart';
+import 'package:raktasetu/core/services/firestore_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Notification Model
 class AppNotification {
@@ -59,95 +62,43 @@ class NotificationsPage extends StatefulWidget {
 
 class _NotificationsPageState extends State<NotificationsPage> {
   String? _selectedFilter;
-  late List<AppNotification> _notifications;
+  List<AppNotification> _notifications = [];
+
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _initializeNotifications();
+    _fetchLiveRequests();
+  }
+
+  Future<void> _fetchLiveRequests() async {
+    setState(() => _isLoading = true);
+    try {
+      final requests = await getIt<FirestoreService>().getActiveBloodRequests();
+      
+      _notifications = requests.map((req) => AppNotification(
+        id: req.id,
+        title: 'Urgent Blood Need',
+        message: '${req.urgency}: ${req.units} unit(s) of ${req.bloodGroup} needed for ${req.patientName}',
+        type: NotificationType.urgentNeed,
+        timestamp: req.createdAt,
+        isRead: false,
+        actionLabel: 'Help Now',
+        location: req.hospitalName,
+        onAction: () => launchUrl(Uri(scheme: 'tel', path: req.contactNumber)),
+      )).toList();
+    } catch (e) {
+      _notifications = [];
+      _showActionSnackbar('Failed to load real requests');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   void _initializeNotifications() {
-    _notifications = [
-      AppNotification(
-        id: '1',
-        title: 'Urgent Blood Need',
-        message: 'Emergency: O+ blood needed at Apollo Hospital for surgery',
-        type: NotificationType.urgentNeed,
-        timestamp: DateTime.now().subtract(const Duration(minutes: 5)),
-        isRead: false,
-        actionLabel: 'Help Now',
-        location: 'Bangalore',
-        onAction: () => _showActionSnackbar('Urgent need acknowledged'),
-      ),
-      AppNotification(
-        id: '2',
-        title: 'Donor Request',
-        message: 'Rohan Kumar needs B+ blood. You are a match!',
-        type: NotificationType.donorRequest,
-        timestamp: DateTime.now().subtract(const Duration(hours: 2)),
-        isRead: false,
-        donorName: 'Rohan Kumar',
-        donorBloodGroup: 'B+',
-        actionLabel: 'Accept Request',
-        onAction: () => _showActionSnackbar('Request accepted'),
-      ),
-      AppNotification(
-        id: '3',
-        title: 'Donor Nearby',
-        message: 'Priya Singh (AB+) is 2km away and available to donate',
-        type: NotificationType.nearbyAlert,
-        timestamp: DateTime.now().subtract(const Duration(hours: 4)),
-        isRead: true,
-        donorName: 'Priya Singh',
-        donorBloodGroup: 'AB+',
-        location: '2 km away',
-        actionLabel: 'View Profile',
-        onAction: () => _showActionSnackbar('Profile viewed'),
-      ),
-      AppNotification(
-        id: '4',
-        title: 'Time to Donate',
-        message:
-            'You are eligible to donate blood. Schedule your appointment today!',
-        type: NotificationType.donationReminder,
-        timestamp: DateTime.now().subtract(const Duration(days: 1)),
-        isRead: true,
-        actionLabel: 'Schedule Appointment',
-        onAction: () => _showActionSnackbar('Appointment scheduled'),
-      ),
-      AppNotification(
-        id: '5',
-        title: 'Your Impact Story',
-        message: 'Your blood donation saved 3 lives this month. Thank you!',
-        type: NotificationType.successStory,
-        timestamp: DateTime.now().subtract(const Duration(days: 3)),
-        isRead: true,
-        actionLabel: 'View Details',
-        onAction: () => _showActionSnackbar('Story viewed'),
-      ),
-      AppNotification(
-        id: '6',
-        title: 'System Maintenance',
-        message: 'App will be under maintenance on March 20, 2:00 AM - 4:00 AM',
-        type: NotificationType.systemUpdate,
-        timestamp: DateTime.now().subtract(const Duration(days: 5)),
-        isRead: true,
-        actionLabel: 'Acknowledge',
-        onAction: () => _showActionSnackbar('Update acknowledged'),
-      ),
-      AppNotification(
-        id: '7',
-        title: 'Urgent Blood Need',
-        message: 'Critical: AB- blood needed at Fortis Hospital in Indiranagar',
-        type: NotificationType.urgentNeed,
-        timestamp: DateTime.now().subtract(const Duration(hours: 12)),
-        isRead: true,
-        actionLabel: 'Help Now',
-        location: 'Indiranagar',
-        onAction: () => _showActionSnackbar('Urgent need acknowledged'),
-      ),
-    ];
+    // Deprecated: Now using _fetchLiveRequests instead.
+    _notifications = [];
   }
 
   void _showActionSnackbar(String message) {
@@ -223,9 +174,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
             ),
         ],
       ),
-      body: _notifications.isEmpty
-          ? _buildEmptyState()
-          : SingleChildScrollView(
+      body: _isLoading 
+          ? const Center(child: CircularProgressIndicator())
+          : _notifications.isEmpty
+              ? _buildEmptyState()
+              : SingleChildScrollView(
               child: Column(
                 children: [
                   // Premium Header Section

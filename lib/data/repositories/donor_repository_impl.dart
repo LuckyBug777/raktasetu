@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:raktasetu/core/constants/app_constants.dart';
 import 'package:raktasetu/core/utils/geolocation_utils.dart';
 import 'package:raktasetu/data/datasources/donor_remote_datasource.dart';
@@ -80,10 +81,11 @@ class DonorRepositoryImpl implements DonorRepository {
   }) async {
     try {
       final donors = await remoteDataSource.getAllDonors();
+      final currentUid = FirebaseAuth.instance.currentUser?.uid;
 
-      // Filter by visibility and availability
+      // Exclude self and donors hidden from search
       final visibleDonors = donors
-          .where((donor) => donor.isVisibleInSearch && donor.isAvailableNow)
+          .where((donor) => donor.isVisibleInSearch && donor.id != currentUid)
           .toList();
 
       // Apply proximity filter

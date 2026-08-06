@@ -31,11 +31,12 @@ class OtpSent extends AuthState {
 /// Authentication successful - user logged in
 class AuthSuccess extends AuthState {
   final String userId;
+  final Map<String, dynamic>? userData;
 
-  const AuthSuccess({required this.userId});
+  const AuthSuccess({required this.userId, this.userData});
 
   @override
-  List<Object?> get props => [userId];
+  List<Object?> get props => [userId, userData];
 }
 
 /// Authentication failed - error occurred

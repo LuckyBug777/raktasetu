@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:raktasetu/core/theme/app_theme.dart';
+import 'package:raktasetu/core/di/service_locator.dart';
+import 'package:raktasetu/core/services/firestore_service.dart';
+import 'package:raktasetu/core/services/firebase_auth_service.dart';
 
 /// My Donations Page - Complete donation history and statistics
 class MyDonationsPage extends StatefulWidget {
@@ -10,54 +14,53 @@ class MyDonationsPage extends StatefulWidget {
 }
 
 class _MyDonationsPageState extends State<MyDonationsPage> {
-  // Sample donation data
-  final List<DonationRecord> donationHistory = [
-    DonationRecord(
-      id: '5',
-      date: DateTime.now().subtract(const Duration(days: 45)),
-      bloodGroup: 'O+',
-      location: 'Red Cross Hospital, Bengaluru',
-      status: 'Completed',
-      units: 1,
-      notes: 'Successful donation',
-    ),
-    DonationRecord(
-      id: '4',
-      date: DateTime.now().subtract(const Duration(days: 135)),
-      bloodGroup: 'O+',
-      location: 'RaktaSetu Camp, Indiranagar',
-      status: 'Completed',
-      units: 1,
-      notes: 'Successful donation',
-    ),
-    DonationRecord(
-      id: '3',
-      date: DateTime.now().subtract(const Duration(days: 225)),
-      bloodGroup: 'O+',
-      location: 'Apollo Hospital, Bengaluru',
-      status: 'Completed',
-      units: 1,
-      notes: 'Successful donation',
-    ),
-    DonationRecord(
-      id: '2',
-      date: DateTime.now().subtract(const Duration(days: 315)),
-      bloodGroup: 'O+',
-      location: 'Fortis Hospital, Bengaluru',
-      status: 'Completed',
-      units: 1,
-      notes: 'Successful donation',
-    ),
-    DonationRecord(
-      id: '1',
-      date: DateTime.now().subtract(const Duration(days: 405)),
-      bloodGroup: 'O+',
-      location: 'St. John\'s Hospital, Bengaluru',
-      status: 'Completed',
-      units: 1,
-      notes: 'Successful donation',
-    ),
-  ];
+  bool _isLoading = true;
+  List<DonationRecord> donationHistory = [];
+  int _totalDonations = 0;
+  int _livesImpacted = 0;
+  int _unitsDonated = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchDonations();
+  }
+
+  Future<void> _fetchDonations() async {
+    setState(() => _isLoading = true);
+    try {
+      final user = getIt<FirebaseAuthService>().currentUser;
+      if (user == null) {
+        setState(() => _isLoading = false);
+        return;
+      }
+      final donations = await getIt<FirestoreService>().getUserDonations(user.uid);
+      
+      int totalU = 0;
+      donationHistory = donations.map((d) {
+        int units = d['units'] ?? 1;
+        totalU += units;
+        return DonationRecord(
+          id: d['id'],
+          date: d['donatedAt'] != null ? (d['donatedAt'] as Timestamp).toDate() : DateTime.now(),
+          bloodGroup: d['bloodGroup'] ?? 'Unknown',
+          location: d['location'] ?? 'Unknown',
+          status: d['status'] ?? 'Completed',
+          units: units,
+          notes: d['notes'] ?? '',
+        );
+      }).toList();
+
+      _totalDonations = donationHistory.length;
+      _unitsDonated = totalU;
+      _livesImpacted = totalU * 3;
+
+    } catch (e) {
+      donationHistory = [];
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -120,7 +123,7 @@ class _MyDonationsPageState extends State<MyDonationsPage> {
                       children: [
                         Expanded(
                           child: _buildStatBox(
-                            number: '5',
+                            number: _isLoading ? '-' : _totalDonations.toString(),
                             label: 'Total Donations',
                             icon: Icons.favorite,
                           ),
@@ -128,7 +131,7 @@ class _MyDonationsPageState extends State<MyDonationsPage> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: _buildStatBox(
-                            number: '5L',
+                            number: _isLoading ? '-' : _livesImpacted.toString(),
                             label: 'Lives Impacted',
                             icon: Icons.people,
                           ),
@@ -136,7 +139,7 @@ class _MyDonationsPageState extends State<MyDonationsPage> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: _buildStatBox(
-                            number: '10',
+                            number: _isLoading ? '-' : _unitsDonated.toString(),
                             label: 'Units Donated',
                             icon: Icons.opacity,
                           ),
@@ -257,19 +260,29 @@ class _MyDonationsPageState extends State<MyDonationsPage> {
                   const SizedBox(height: 16),
 
                   // Timeline
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: donationHistory.length,
-                    itemBuilder: (context, index) {
-                      final donation = donationHistory[index];
-                      final isLast = index == donationHistory.length - 1;
-                      return _buildDonationTimeline(
-                        donation: donation,
-                        isLast: isLast,
-                      );
-                    },
-                  ),
+                  _isLoading 
+                      ? const Padding(
+                          padding: EdgeInsets.only(top: 20),
+                          child: Center(child: CircularProgressIndicator()),
+                        )
+                      : donationHistory.isEmpty 
+                          ? const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 20),
+                              child: Text('No donations recorded yet.', style: TextStyle(color: Colors.grey)),
+                            )
+                          : ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: donationHistory.length,
+                              itemBuilder: (context, index) {
+                                final donation = donationHistory[index];
+                                final isLast = index == donationHistory.length - 1;
+                                return _buildDonationTimeline(
+                                  donation: donation,
+                                  isLast: isLast,
+                                );
+                              },
+                            ),
                 ],
               ),
             ),

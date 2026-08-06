@@ -38,3 +38,15 @@ class LogoutEvent extends AuthEvent {
 class CheckAuthStatusEvent extends AuthEvent {
   const CheckAuthStatusEvent();
 }
+
+/// Event: Login completed successfully — carries the user data directly
+/// so AuthBloc immediately emits AuthSuccess without an extra async fetch.
+class LoginSuccessEvent extends AuthEvent {
+  final String userId;
+  final Map<String, dynamic>? userData;
+
+  const LoginSuccessEvent({required this.userId, this.userData});
+
+  @override
+  List<Object?> get props => [userId, userData];
+}

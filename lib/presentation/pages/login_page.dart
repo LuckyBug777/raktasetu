@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:raktasetu/core/di/service_locator.dart';
+import 'package:raktasetu/core/services/firebase_auth_service.dart';
+import 'package:raktasetu/core/services/firestore_service.dart';
 import 'package:raktasetu/core/theme/app_theme.dart';
+import 'package:raktasetu/core/utils/location_service.dart';
+import 'package:raktasetu/presentation/bloc/auth_bloc.dart';
 
 /// OTP Login Page for Firebase authentication
 class LoginPage extends StatefulWidget {
@@ -7,7 +13,7 @@ class LoginPage extends StatefulWidget {
   final bool isNewUser;
 
   const LoginPage({Key? key, this.phoneNumber, this.isNewUser = false})
-    : super(key: key);
+      : super(key: key);
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -18,6 +24,7 @@ class _LoginPageState extends State<LoginPage> {
   final _otpController = TextEditingController();
   bool _isOtpSent = false;
   bool _isLoading = false;
+  String? _verificationId;
 
   @override
   void initState() {
@@ -25,7 +32,18 @@ class _LoginPageState extends State<LoginPage> {
     // If coming from signup, pre-fill phone and show OTP field
     if (widget.phoneNumber != null && widget.isNewUser) {
       _phoneController.text = widget.phoneNumber!;
+      // Note: In a real flow, the verificationId would be passed here
       _isOtpSent = true;
+      // Extract verificationId if it exists in settings (SignupPage passes it)
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+        if (args != null && args['verificationId'] != null) {
+          setState(() {
+            _verificationId = args['verificationId'];
+          });
+        }
+      });
     }
   }
 
@@ -36,8 +54,8 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  /// Send OTP to phone number
-  void _sendOtp() {
+  /// Send OTP to phone number — blocked if the number has no account.
+  Future<void> _sendOtp() async {
     if (_phoneController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter phone number')),
@@ -45,47 +63,158 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
-    // TODO: Call AuthBloc to send OTP
-    Future.delayed(const Duration(seconds: 2), () {
+    // Check if this phone number has a registered account
+    bool exists;
+    try {
+      exists = await getIt<FirestoreService>().checkPhoneExists(_phoneController.text);
+    } catch (e) {
       if (mounted) {
-        setState(() {
-          _isOtpSent = true;
-          _isLoading = false;
-        });
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('OTP sent successfully')));
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Could not verify number. Check your connection and try again.'),
+            backgroundColor: Colors.orange[700],
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
-    });
-  }
-
-  /// Verify OTP and login
-  void _verifyOtp() {
-    if (_otpController.text.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please enter OTP')));
+      return;
+    }
+    if (!exists) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+                'No account found with this number. Please sign up first.'),
+            backgroundColor: Colors.red[700],
+            behavior: SnackBarBehavior.floating,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+      }
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    final authService = getIt<FirebaseAuthService>();
+    authService.sendOtp(
+      _phoneController.text,
+      onCodeSent: (verificationId) {
+        if (mounted) {
+          setState(() {
+            _verificationId = verificationId;
+            _isOtpSent = true;
+            _isLoading = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('OTP sent successfully')),
+          );
+        }
+      },
+      onError: (exception) {
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(exception.message ?? 'Failed to send OTP'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      },
+    );
+  }
 
-    // TODO: Call AuthBloc to verify OTP
-    Future.delayed(const Duration(seconds: 2), () {
+  /// Verify OTP and login
+  void _verifyOtp() async {
+    if (_otpController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter OTP')),
+      );
+      return;
+    }
+
+    if (_verificationId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Verification session expired. Please resend OTP.')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final authService = getIt<FirebaseAuthService>();
+      final userCredential = await authService.verifyOtp(
+        _verificationId!,
+        _otpController.text,
+      );
+
+      if (userCredential != null) {
+        if (mounted) {
+          // If it was a signup, register the user profile first
+          final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+          if (args != null && args['isNewUser'] == true && args['signupData'] != null) {
+            final data = args['signupData'] as Map<String, dynamic>;
+            await authService.registerUser(
+              uid: userCredential.user!.uid,
+              name: data['name'],
+              phoneNumber: data['phoneNumber'],
+              bloodGroup: data['bloodGroup'],
+              district: data['district'],
+            );
+          }
+
+          // Fetch the user's Firestore profile NOW (before navigation) so we
+          // can dispatch LoginSuccessEvent with real data. This ensures the
+          // AuthBloc is already in AuthSuccess when the home screen builds —
+          // no async race condition with the drawer or profile page.
+          final userData = await authService.getUserProfile(userCredential.user!.uid);
+
+          if (mounted) {
+            context.read<AuthBloc>().add(LoginSuccessEvent(
+              userId: userCredential.user!.uid,
+              userData: userData,
+            ));
+            // Fire-and-forget location sync — runs in background, never blocks navigation
+            _syncLocation(userCredential.user!.uid);
+            Navigator.of(context).pushReplacementNamed('/home');
+          }
+        }
+      }
+    } catch (e) {
       if (mounted) {
-        // Navigate to home on successful login
-        Navigator.of(context).pushReplacementNamed('/home');
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Fire-and-forget: gets device location and updates Firestore if changed.
+  /// Never awaited — runs silently in the background after login/signup.
+  void _syncLocation(String uid) {
+    LocationService.getLocationWithDistrict().then((loc) {
+      if (loc != null) {
+        getIt<FirestoreService>().updateLocationIfChanged(
+          uid,
+          loc.lat,
+          loc.lng,
+          loc.district,
+        );
       }
     });
   }
 
   @override
+
   Widget build(BuildContext context) {
     return Scaffold(
       body: SingleChildScrollView(
@@ -100,14 +229,25 @@ class _LoginPageState extends State<LoginPage> {
                 child: Column(
                   children: [
                     Container(
-                      width: 80,
-                      height: 80,
+                      width: 90,
+                      height: 90,
                       decoration: BoxDecoration(
-                        color: AppTheme.bloodRed.withOpacity(0.1),
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.bloodRed.withOpacity(0.15),
+                            blurRadius: 10,
+                            spreadRadius: 2,
+                          ),
+                        ],
                       ),
-                      child: const Center(
-                        child: Text('🩸', style: TextStyle(fontSize: 48)),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: Image.asset(
+                          'assets/Raktasetu.jpg',
+                          fit: BoxFit.contain,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -181,15 +321,15 @@ class _LoginPageState extends State<LoginPage> {
                           onPressed: _isLoading ? null : _sendOtp,
                           icon: _isLoading
                               ? SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white,
-                                    ),
-                                  ),
-                                )
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          )
                               : const Icon(Icons.send),
                           label: Text(
                             _isLoading ? 'Sending...' : 'Send OTP',
@@ -242,11 +382,11 @@ class _LoginPageState extends State<LoginPage> {
                           onTap: _isLoading
                               ? null
                               : () {
-                                  setState(() {
-                                    _isOtpSent = false;
-                                    _otpController.clear();
-                                  });
-                                },
+                            setState(() {
+                              _isOtpSent = false;
+                              _otpController.clear();
+                            });
+                          },
                           child: Text(
                             'Resend OTP',
                             style: TextStyle(
@@ -266,15 +406,15 @@ class _LoginPageState extends State<LoginPage> {
                           onPressed: _isLoading ? null : _verifyOtp,
                           icon: _isLoading
                               ? SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white,
-                                    ),
-                                  ),
-                                )
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          )
                               : const Icon(Icons.check_circle),
                           label: Text(
                             _isLoading ? 'Verifying...' : 'Verify OTP',

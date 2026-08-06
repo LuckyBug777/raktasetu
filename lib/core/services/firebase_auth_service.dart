@@ -16,36 +16,48 @@ class FirebaseAuthService {
 
   /// Send OTP to phone number
   Future<void> sendOtp(
-    String phoneNumber, {
-    required Function(String verificationId) onCodeSent,
-    required Function(FirebaseAuthException exception) onError,
-  }) async {
+      String phoneNumber, {
+        required Function(String verificationId) onCodeSent,
+        required Function(FirebaseAuthException exception) onError,
+      }) async {
     try {
+      // Clean phone number: remove all non-digits except '+'
+      String cleanPhone = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
+
+      // Ensure it has the +91 prefix if missing
+      cleanPhone = cleanPhone.startsWith('+') ? cleanPhone : '+91$cleanPhone';
+
+      print('🔥 Attemping to send OTP to: $cleanPhone');
+
       await _auth.verifyPhoneNumber(
-        phoneNumber: phoneNumber.startsWith('+')
-            ? phoneNumber
-            : '+91$phoneNumber',
+        phoneNumber: cleanPhone,
         verificationCompleted: (PhoneAuthCredential credential) async {
+          print('✅ Verification Completed Automatically: ${credential.providerId}');
           await _auth.signInWithCredential(credential);
         },
         verificationFailed: (FirebaseAuthException e) {
+          print('❌ Verification Failed: Code: ${e.code}, Message: ${e.message}');
           onError(e);
         },
         codeSent: (String verificationId, int? resendToken) {
+          print('📩 Code Sent! Verification ID: $verificationId');
           onCodeSent(verificationId);
         },
-        codeAutoRetrievalTimeout: (String verificationId) {},
+        codeAutoRetrievalTimeout: (String verificationId) {
+          print('⏰ Code Auto Retrieval Timeout: $verificationId');
+        },
       );
     } catch (e) {
+      print('💥 Unexpected Error in sendOtp: $e');
       onError(FirebaseAuthException(code: 'unknown', message: e.toString()));
     }
   }
 
   /// Verify OTP and sign in
   Future<UserCredential?> verifyOtp(
-    String verificationId,
-    String smsCode,
-  ) async {
+      String verificationId,
+      String smsCode,
+      ) async {
     try {
       PhoneAuthCredential credential = PhoneAuthProvider.credential(
         verificationId: verificationId,
@@ -87,6 +99,17 @@ class FirebaseAuthService {
       });
     } catch (e) {
       throw Exception('Failed to register user: $e');
+    }
+  }
+
+  /// Get user profile info
+  Future<Map<String, dynamic>?> getUserProfile(String uid) async {
+    try {
+      final doc = await _firestore.collection('users').doc(uid).get();
+      return doc.data();
+    } catch (e) {
+      print('❌ Failed to fetch user profile: $e');
+      return null;
     }
   }
 

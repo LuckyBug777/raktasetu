@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:raktasetu/core/constants/app_constants.dart';
 import 'package:raktasetu/core/di/service_locator.dart';
 import 'package:raktasetu/core/services/firebase_auth_service.dart';
+import 'package:raktasetu/core/services/firestore_service.dart';
 import 'package:raktasetu/core/theme/app_theme.dart';
 
 /// Signup Page - User registration with profile information
@@ -105,28 +106,70 @@ class _SignupPageState extends State<SignupPage> {
     }
   }
 
-  /// Complete signup and go to OTP
-  void _completeSignup() {
+  /// Complete signup — blocked if this number already has an account.
+  Future<void> _completeSignup() async {
     setState(() => _isLoading = true);
 
-    final authService = getIt<FirebaseAuthService>();
+    final phoneNumber =
+        _phoneController.text.replaceAll(RegExp(r'[^\d+]'), '');
 
+    // Block if this number is already registered
+    bool exists;
+    try {
+      exists = await getIt<FirestoreService>().checkPhoneExists(phoneNumber);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Could not verify number. Check your connection and try again.'),
+            backgroundColor: Colors.orange[700],
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      return;
+    }
+    if (exists) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+                'This number is already registered. Please log in instead.'),
+            backgroundColor: Colors.orange[800],
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10)),
+            action: SnackBarAction(
+              label: 'Log In',
+              textColor: Colors.white,
+              onPressed: () {
+                Navigator.of(context).pushReplacementNamed('/login');
+              },
+            ),
+          ),
+        );
+      }
+      return;
+    }
+
+    final authService = getIt<FirebaseAuthService>();
     authService.sendOtp(
-      _phoneController.text,
+      phoneNumber,
       onCodeSent: (verificationId) {
-        // Store signup data temporarily
         final signupData = {
           'name': _nameController.text,
           'bloodGroup': _selectedBloodGroup,
           'district': _selectedDistrict,
-          'phoneNumber': _phoneController.text,
+          'phoneNumber': phoneNumber,
         };
 
         if (mounted) {
           Navigator.of(context).pushReplacementNamed(
             '/login',
             arguments: {
-              'phoneNumber': _phoneController.text,
+              'phoneNumber': phoneNumber,
               'isNewUser': true,
               'signupData': signupData,
               'verificationId': verificationId,
@@ -271,19 +314,19 @@ class _SignupPageState extends State<SignupPage> {
                     ),
                     child: _isLoading
                         ? SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
-                              ),
-                            ),
-                          )
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Colors.white,
+                        ),
+                      ),
+                    )
                         : Text(
-                            _currentPage == 2 ? 'Sign Up' : 'Next',
-                            style: const TextStyle(color: Colors.white),
-                          ),
+                      _currentPage == 2 ? 'Sign Up' : 'Next',
+                      style: const TextStyle(color: Colors.white),
+                    ),
                   ),
                 ),
               ],
@@ -644,14 +687,14 @@ class _SignupPageState extends State<SignupPage> {
             child: isCompleted
                 ? const Icon(Icons.check, color: Colors.white, size: 20)
                 : Text(
-                    '$number',
-                    style: TextStyle(
-                      color: isActive || isCompleted
-                          ? Colors.white
-                          : Colors.grey,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+              '$number',
+              style: TextStyle(
+                color: isActive || isCompleted
+                    ? Colors.white
+                    : Colors.grey,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 4),

@@ -4,7 +4,7 @@ import 'package:raktasetu/core/constants/app_constants.dart';
 import 'package:raktasetu/core/theme/app_theme.dart';
 import 'package:raktasetu/core/utils/location_service.dart';
 import 'package:raktasetu/presentation/bloc/donor_search_bloc.dart';
-import 'package:raktasetu/presentation/pages/my_donations_page.dart';
+import 'package:raktasetu/presentation/bloc/auth_bloc.dart';
 import 'package:raktasetu/presentation/pages/notifications_page.dart';
 import 'package:raktasetu/presentation/pages/profile_page.dart';
 import 'package:raktasetu/presentation/widgets/blood_group_selector.dart';
@@ -12,6 +12,10 @@ import 'package:raktasetu/presentation/widgets/district_selector.dart';
 import 'package:raktasetu/presentation/widgets/donor_card.dart';
 import 'package:raktasetu/presentation/widgets/common_widgets.dart'
     as custom_widgets;
+import 'package:raktasetu/core/di/service_locator.dart';
+import 'package:raktasetu/core/services/firestore_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// Donor Search Page - Main UI for searching donors
 class DonorSearchPage extends StatefulWidget {
@@ -23,6 +27,7 @@ class DonorSearchPage extends StatefulWidget {
 
 class _DonorSearchPageState extends State<DonorSearchPage> {
   late DonorSearchBloc _searchBloc;
+  final ScrollController _scrollController = ScrollController();
 
   String? _selectedBloodGroup;
   String? _selectedDistrict;
@@ -31,6 +36,22 @@ class _DonorSearchPageState extends State<DonorSearchPage> {
   void initState() {
     super.initState();
     _searchBloc = context.read<DonorSearchBloc>();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToResults() {
+    Future.delayed(const Duration(milliseconds: 300), () {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeOut,
+      );
+    });
   }
 
   /// Search by District
@@ -86,6 +107,34 @@ class _DonorSearchPageState extends State<DonorSearchPage> {
 
   /// Find Nearby Donors (all blood groups)
   void _findNearbyDonors() async {
+    final serviceEnabled = await LocationService.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Location Disabled'),
+          content: const Text(
+            'Please enable location services on your device to find nearby donors.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                LocationService.openLocationSettings();
+              },
+              child: const Text('Open Settings'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     try {
       final location = await LocationService.getCurrentLocation();
 
@@ -96,7 +145,9 @@ class _DonorSearchPageState extends State<DonorSearchPage> {
           radiusKm: AppConstants.PROXIMITY_RADIUS_KM,
         ),
       );
+      _scrollToResults();
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Location error: $e')));
@@ -150,6 +201,7 @@ class _DonorSearchPageState extends State<DonorSearchPage> {
       ),
       drawer: _buildDrawer(context),
       body: SingleChildScrollView(
+        controller: _scrollController,
         child: Column(
           children: [
             // Premium Header Section with Hero Impact
@@ -182,61 +234,70 @@ class _DonorSearchPageState extends State<DonorSearchPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Emergency Stats Banner
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.2),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
-                              Text(
-                                '2,847',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
+                    StreamBuilder<QuerySnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection('users')
+                          .where('isAvailable', isEqualTo: true)
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        String activeDonorsStr = "0";
+                        if (snapshot.hasData) {
+                          activeDonorsStr = snapshot.data!.docs.length
+                              .toString();
+                        }
+
+                        return FutureBuilder<Map<String, int>>(
+                          future: getIt<FirestoreService>().getGlobalAppStats(),
+                          builder: (context, statsSnapshot) {
+                            String livesSavedStr = "0";
+                            if (statsSnapshot.hasData) {
+                              livesSavedStr = statsSnapshot.data!['livesSaved']
+                                  .toString();
+                            }
+
+                            return Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.2),
                                 ),
                               ),
-                              Text(
-                                'Active Donors',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 11,
-                                ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.center,
+                                children: [
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        snapshot.connectionState ==
+                                                ConnectionState.waiting
+                                            ? '...'
+                                            : activeDonorsStr,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const Text(
+                                        'Active Donors',
+                                        style: TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          const Text('🩸', style: TextStyle(fontSize: 28)),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: const [
-                              Text(
-                                '12 Lives',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Text(
-                                'Saved This Week',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                            );
+                          },
+                        );
+                      },
                     ),
                     const SizedBox(height: 20),
 
@@ -268,22 +329,6 @@ class _DonorSearchPageState extends State<DonorSearchPage> {
                             icon: Icons.location_on,
                             title: 'Nearby',
                             onTap: _findNearbyDonors,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildQuickSearchCard(
-                            icon: Icons.my_location,
-                            title: '10km Radius',
-                            onTap: _searchByLocation,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildQuickSearchCard(
-                            icon: Icons.location_city,
-                            title: 'Location',
-                            onTap: _searchByDistrict,
                           ),
                         ),
                       ],
@@ -434,6 +479,7 @@ class _DonorSearchPageState extends State<DonorSearchPage> {
                           label: const Text('Search'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.bloodRed,
+                            foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
@@ -714,39 +760,57 @@ class _DonorSearchPageState extends State<DonorSearchPage> {
         padding: EdgeInsets.zero,
         children: [
           // Drawer Header
-          DrawerHeader(
-            decoration: BoxDecoration(color: AppTheme.bloodRed),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Center(
-                    child: Text('👤', style: TextStyle(fontSize: 30)),
-                  ),
+          BlocBuilder<AuthBloc, AuthState>(
+            builder: (context, state) {
+              String name = 'John Doe';
+              String phone = '+91 98765 43210';
+
+              if (state is AuthSuccess) {
+                final data = state.userData;
+                if (data != null) {
+                  name = data['name'] ?? 'No Name';
+                  phone = data['phoneNumber'] ?? 'No Phone';
+                }
+              }
+
+              return DrawerHeader(
+                decoration: BoxDecoration(color: AppTheme.bloodRed),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: Text('👤', style: TextStyle(fontSize: 30)),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      phone,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
-                const Text(
-                  'John Doe',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  '+91 98765 43210',
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
-                ),
-              ],
-            ),
+              );
+            },
           ),
 
           // Menu Items
@@ -767,19 +831,6 @@ class _DonorSearchPageState extends State<DonorSearchPage> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.favorite),
-            title: const Text('My Donations'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const MyDonationsPage(),
-                ),
-              );
-            },
-          ),
-          ListTile(
             leading: const Icon(Icons.notifications),
             title: const Text('Notifications'),
             onTap: () {
@@ -792,17 +843,60 @@ class _DonorSearchPageState extends State<DonorSearchPage> {
               );
             },
           ),
+          // Admin Panel — only visible when isAdmin == true in Firestore
+          StreamBuilder<DocumentSnapshot>(
+            stream: FirebaseAuth.instance.currentUser != null
+                ? FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(FirebaseAuth.instance.currentUser!.uid)
+                      .snapshots()
+                : const Stream.empty(),
+            builder: (context, snapshot) {
+              final data = snapshot.data?.data() as Map<String, dynamic>?;
+              if (data?['isAdmin'] != true) return const SizedBox.shrink();
+              return Column(
+                children: [
+                  const Divider(),
+                  ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: AppTheme.bloodRed.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.admin_panel_settings_rounded,
+                        color: AppTheme.bloodRed,
+                        size: 20,
+                      ),
+                    ),
+                    title: Text(
+                      'Admin Panel',
+                      style: TextStyle(
+                        color: AppTheme.bloodRed,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    subtitle: const Text(
+                      'Manage blood banks & hospitals',
+                      style: TextStyle(fontSize: 11),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, '/admin-verify');
+                    },
+                  ),
+                ],
+              );
+            },
+          ),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.info),
             title: const Text('About'),
             onTap: () {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('RaktaSetu v1.0.0 - Blood Donation Network'),
-                ),
-              );
+              Navigator.pushNamed(context, '/about-us');
             },
           ),
           ListTile(

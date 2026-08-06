@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:raktasetu/core/theme/app_theme.dart';
 import 'package:raktasetu/domain/entities/donor_search_result.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Donor Card Widget - Professional UI for displaying donor information
 class DonorCard extends StatelessWidget {
@@ -57,26 +58,6 @@ class DonorCard extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.location_on,
-                              size: 14,
-                              color: Colors.grey[500],
-                            ),
-                            const SizedBox(width: 3),
-                            Text(
-                              donor.district,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
                       ],
                     ),
                   ),
@@ -106,50 +87,6 @@ class DonorCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-
-              // Info Grid
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    // Distance
-                    Expanded(
-                      child: _buildInfoItem(
-                        icon: Icons.navigation,
-                        label:
-                            '${donorResult.distanceKm.toStringAsFixed(1)} km',
-                        color: AppTheme.bloodRed,
-                      ),
-                    ),
-                    Container(width: 1, height: 30, color: Colors.grey[300]),
-                    // Donations
-                    Expanded(
-                      child: _buildInfoItem(
-                        icon: Icons.favorite,
-                        label: '${donor.totalDonations}x',
-                        color: Colors.pink,
-                      ),
-                    ),
-                    Container(width: 1, height: 30, color: Colors.grey[300]),
-                    // Rating
-                    Expanded(
-                      child: _buildInfoItem(
-                        icon: Icons.star,
-                        label: donor.rating != null
-                            ? donor.rating!.toStringAsFixed(1)
-                            : 'N/A',
-                        color: Colors.amber,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
               const SizedBox(height: 12),
 
               // Availability Status
@@ -166,23 +103,21 @@ class DonorCard extends StatelessWidget {
                               width: 8,
                               height: 8,
                               decoration: BoxDecoration(
-                                color: donor.isAvailableNow
+                                color: donor.isVisibleInSearch
                                     ? AppTheme.successGreen
-                                    : Colors.orange,
+                                    : Colors.grey,
                                 shape: BoxShape.circle,
                               ),
                             ),
                             const SizedBox(width: 6),
                             Text(
-                              donor.isAvailableNow
-                                  ? 'Available Now'
-                                  : 'Not Available',
+                              donor.isVisibleInSearch ? 'Active' : 'Inactive',
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: donor.isAvailableNow
+                                color: donor.isVisibleInSearch
                                     ? AppTheme.successGreen
-                                    : Colors.orange,
+                                    : Colors.grey,
                               ),
                             ),
                           ],
@@ -191,11 +126,14 @@ class DonorCard extends StatelessWidget {
                     ),
                   ),
                   ElevatedButton.icon(
-                    onPressed: onPressed,
+                    onPressed: () => launchUrl(
+                      Uri(scheme: 'tel', path: donor.phoneNumber),
+                    ),
                     icon: const Icon(Icons.call, size: 16),
-                    label: const Text('Contact'),
+                    label: const Text('Call'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.bloodRed,
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 8,

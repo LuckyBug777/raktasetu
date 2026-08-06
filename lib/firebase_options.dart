@@ -57,22 +57,20 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDemoAndroidKeyRaktaSetu',
-    appId: '1:123456789:android:demoandroidapprraktasetu',
-    messagingSenderId: '123456789',
-    projectId: 'raktasetu-app',
-    databaseURL: 'https://raktasetu-app.firebaseio.com',
-    storageBucket: 'raktasetu-app.appspot.com',
+    apiKey: 'AIzaSyAESJ-rJZPbibLoMbp9ue1vjkDWAOFHuIE',
+    appId: '1:33349924340:android:05a55d47da433904a6f5a1',
+    messagingSenderId: '33349924340',
+    projectId: 'rakta-setu',
+    storageBucket: 'rakta-setu.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyDempiOSKeyRaktaSetu',
-    appId: '1:123456789:ios:demoiosapprraktasetu',
-    messagingSenderId: '123456789',
-    projectId: 'raktasetu-app',
-    databaseURL: 'https://raktasetu-app.firebaseio.com',
-    storageBucket: 'raktasetu-app.appspot.com',
-    iosBundleId: 'com.vquint.raktasetu',
+    apiKey: 'AIzaSyB5HXk1rUDnQjmVWzCnosE8F_llLj2Gqd0',
+    appId: '1:33349924340:ios:83262cce02752d5aa6f5a1',
+    messagingSenderId: '33349924340',
+    projectId: 'rakta-setu',
+    storageBucket: 'rakta-setu.firebasestorage.app',
+    iosBundleId: 'com.vquint.raktasetu.raktasetu',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
